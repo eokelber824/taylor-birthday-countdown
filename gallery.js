@@ -13,10 +13,108 @@
   var timer = null;
   var IMAGE_SLIDE_MS = 5000;
   var VIDEO_SLIDE_MS = 7000;
+  var SLIDESHOW_MAX_WIDTH = 960;
+  var SLIDESHOW_MAX_HEIGHT_RATIO = 0.38;
 
   function slideDuration(index) {
     var item = items[index];
     return item && item.type === "video" ? VIDEO_SLIDE_MS : IMAGE_SLIDE_MS;
+  }
+
+  function readElementDimensions(el) {
+    if (!el) return null;
+    if (el.tagName === "IMG" && el.naturalWidth > 0) {
+      return { width: el.naturalWidth, height: el.naturalHeight };
+    }
+    if (el.tagName === "VIDEO" && el.videoWidth > 0) {
+      return { width: el.videoWidth, height: el.videoHeight };
+    }
+    return null;
+  }
+
+  function getItemDimensions(item, el) {
+    if (item.width > 0 && item.height > 0) {
+      return { width: item.width, height: item.height };
+    }
+    var fromEl = readElementDimensions(el);
+    if (fromEl) {
+      item.width = fromEl.width;
+      item.height = fromEl.height;
+      return fromEl;
+    }
+    return null;
+  }
+
+  function isPortrait(dims) {
+    return dims.height > dims.width;
+  }
+
+  function computeDisplaySize(natWidth, natHeight) {
+    var maxW = Math.min(SLIDESHOW_MAX_WIDTH, window.innerWidth - 32);
+    var maxH = Math.round(window.innerHeight * SLIDESHOW_MAX_HEIGHT_RATIO);
+    var scale = Math.min(maxW / natWidth, maxH / natHeight);
+    return {
+      width: Math.round(natWidth * scale),
+      height: Math.round(natHeight * scale),
+    };
+  }
+
+  function updateSlideshowLayout(index) {
+    var slide = getSlides()[index];
+    if (!slide) return;
+
+    var media = slide.querySelector(".slideshow__media");
+    var item = items[index];
+    var dims = getItemDimensions(item, media);
+    if (!dims) return;
+
+    var size = computeDisplaySize(dims.width, dims.height);
+    slideshowEl.style.width = size.width + "px";
+    slideshowEl.style.height = size.height + "px";
+    slideshowEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
+  }
+
+  function applyIntrinsicSize(el, item) {
+    var dims = getItemDimensions(item, el);
+    if (!dims) return;
+
+    el.width = dims.width;
+    el.height = dims.height;
+    el.setAttribute("width", String(dims.width));
+    el.setAttribute("height", String(dims.height));
+  }
+
+  function applyGalleryAspect(button, item) {
+    var dims = getItemDimensions(item);
+    if (!dims) return;
+    button.style.aspectRatio = dims.width + " / " + dims.height;
+    button.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
+  }
+
+  function onMediaReady(item, el, index) {
+    applyIntrinsicSize(el, item);
+    applyGalleryAspect(
+      galleryEl.querySelector('.gallery__item[data-index="' + index + '"]'),
+      item
+    );
+    if (index === currentIndex) {
+      updateSlideshowLayout(index);
+    }
+  }
+
+  function bindMediaReady(item, el, index) {
+    if (item.type === "video") {
+      el.addEventListener("loadedmetadata", function () {
+        onMediaReady(item, el, index);
+      });
+      if (el.readyState >= 1) onMediaReady(item, el, index);
+      return;
+    }
+
+    el.addEventListener("load", function () {
+      onMediaReady(item, el, index);
+    });
+    if (el.complete) onMediaReady(item, el, index);
   }
 
   function createMediaElement(item, className) {
@@ -27,6 +125,7 @@
       video.muted = true;
       video.playsInline = true;
       video.loop = true;
+      video.preload = "metadata";
       video.setAttribute("aria-label", item.alt || "Video");
       return video;
     }
@@ -35,8 +134,13 @@
     img.className = className;
     img.src = item.src;
     img.alt = item.alt || "";
-    img.loading = "lazy";
+    img.loading = indexOfItem(item) === 0 ? "eager" : "lazy";
+    img.decoding = "async";
     return img;
+  }
+
+  function indexOfItem(item) {
+    return items.indexOf(item);
   }
 
   function buildSlideshow() {
@@ -47,7 +151,9 @@
     items.forEach(function (item, index) {
       var slide = document.createElement("div");
       slide.className = "slideshow__slide" + (index === 0 ? " is-active" : "");
-      slide.appendChild(createMediaElement(item, "slideshow__media"));
+      var media = createMediaElement(item, "slideshow__media");
+      bindMediaReady(item, media, index);
+      slide.appendChild(media);
       track.appendChild(slide);
     });
 
@@ -91,6 +197,10 @@
       var btn = e.target.closest(".slideshow__dot");
       if (!btn) return;
       goToSlide(Number(btn.dataset.index));
+    });
+
+    window.addEventListener("resize", function () {
+      updateSlideshowLayout(currentIndex);
     });
   }
 
@@ -137,6 +247,7 @@
       dot.classList.toggle("is-active", i === currentIndex);
     });
 
+    updateSlideshowLayout(currentIndex);
     playActiveVideo();
     scheduleNext();
   }
@@ -155,18 +266,22 @@
       button.className = "gallery__item";
       button.setAttribute("aria-label", "View " + (item.alt || "media"));
       button.dataset.index = String(index);
+      applyGalleryAspect(button, item);
 
       if (item.type === "video") {
         var video = createMediaElement(item, "gallery__thumb");
         video.controls = false;
         video.removeAttribute("loop");
+        bindMediaReady(item, video, index);
         button.appendChild(video);
         var badge = document.createElement("span");
         badge.className = "gallery__badge";
         badge.textContent = "Video";
         button.appendChild(badge);
       } else {
-        button.appendChild(createMediaElement(item, "gallery__thumb"));
+        var thumb = createMediaElement(item, "gallery__thumb");
+        bindMediaReady(item, thumb, index);
+        button.appendChild(thumb);
       }
 
       galleryEl.appendChild(button);
@@ -188,10 +303,18 @@
     document.body.classList.add("lightbox-open");
 
     var content = createMediaElement(item, "lightbox__media");
+    applyIntrinsicSize(content, item);
+    bindMediaReady(item, content, index);
+
     if (item.type === "video") {
       content.controls = true;
       content.muted = false;
       content.loop = false;
+    }
+
+    var dims = getItemDimensions(item, content);
+    if (dims) {
+      lightboxEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
     }
 
     var close = document.createElement("button");
@@ -218,7 +341,9 @@
     pauseAllVideos();
     lightboxEl.hidden = true;
     lightboxEl.innerHTML = "";
+    lightboxEl.removeAttribute("data-orientation");
     document.body.classList.remove("lightbox-open");
+    playActiveVideo();
   }
 
   document.addEventListener("keydown", function (e) {
@@ -227,6 +352,7 @@
 
   buildSlideshow();
   buildGallery();
+  updateSlideshowLayout(0);
   playActiveVideo();
   scheduleNext();
 })();
