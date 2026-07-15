@@ -11,7 +11,13 @@
 
   var currentIndex = 0;
   var timer = null;
-  var SLIDE_MS = 5000;
+  var IMAGE_SLIDE_MS = 5000;
+  var VIDEO_SLIDE_MS = 7000;
+
+  function slideDuration(index) {
+    var item = items[index];
+    return item && item.type === "video" ? VIDEO_SLIDE_MS : IMAGE_SLIDE_MS;
+  }
 
   function createMediaElement(item, className) {
     if (item.type === "video") {
@@ -132,17 +138,14 @@
     });
 
     playActiveVideo();
-    restartTimer();
+    scheduleNext();
   }
 
-  function restartTimer() {
-    if (timer) clearInterval(timer);
-    var activeItem = items[currentIndex];
-    if (activeItem && activeItem.type === "video") return;
-
-    timer = setInterval(function () {
+  function scheduleNext() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
       goToSlide(currentIndex + 1);
-    }, SLIDE_MS);
+    }, slideDuration(currentIndex));
   }
 
   function buildGallery() {
@@ -225,5 +228,5 @@
   buildSlideshow();
   buildGallery();
   playActiveVideo();
-  restartTimer();
+  scheduleNext();
 })();
