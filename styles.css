@@ -446,30 +446,30 @@ body.celebration-mode .emoji:nth-child(4) {
 /* Slideshow */
 .slideshow {
   position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin-left: calc(50% - 50vw);
+  background: #000;
+  overflow: hidden;
+}
+
+.slideshow__viewport {
   width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-  aspect-ratio: 16 / 9;
-  background: var(--charcoal);
+  height: 100%;
   overflow: hidden;
 }
 
 .slideshow__track {
-  width: 100%;
+  display: flex;
   height: 100%;
+  will-change: transform;
 }
 
 .slideshow__slide {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.slideshow__slide.is-active {
-  opacity: 1;
-  pointer-events: auto;
+  flex: 0 0 100vw;
+  width: 100vw;
+  height: 100%;
 }
 
 .slideshow__media {
@@ -484,55 +484,30 @@ body.celebration-mode .emoji:nth-child(4) {
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 3rem;
+  height: 3rem;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 254, 251, 0.9);
+  background: rgba(255, 254, 251, 0.85);
   color: var(--charcoal);
-  font-size: 1.5rem;
+  font-size: 2rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 2px 12px var(--shadow);
-  transition: background 0.15s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s, transform 0.15s;
 }
 
 .slideshow__nav:hover {
   background: var(--warm-white);
+  transform: translateY(-50%) scale(1.05);
 }
 
 .slideshow__nav--prev {
-  left: 0.75rem;
+  left: 1rem;
 }
 
 .slideshow__nav--next {
-  right: 0.75rem;
-}
-
-.slideshow__dots {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 0.4rem;
-  z-index: 2;
-}
-
-.slideshow__dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border: none;
-  border-radius: 50%;
-  padding: 0;
-  background: rgba(255, 254, 251, 0.45);
-  cursor: pointer;
-  transition: background 0.15s, transform 0.15s;
-}
-
-.slideshow__dot.is-active {
-  background: var(--warm-white);
-  transform: scale(1.2);
+  right: 1rem;
 }
 
 /* Gallery */
