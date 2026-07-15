@@ -6,15 +6,11 @@ Hosted on GitHub Pages.
 
 ## Setup
 
-### 1. Photo
-
-Replace the placeholder image URL in `index.html` (`#hero-photo` `src`) with Taylor's photo URL.
-
-### 2. Message storage (JSONBin.io — ~3 min)
+### 1. Message storage (JSONBin.io — ~3 min)
 
 See **[MESSAGES_SETUP.md](MESSAGES_SETUP.md)**. Create a free JSONBin account, make a bin, paste the ID and access key into `messages-config.js`, and push.
 
-### 3. GitHub Pages
+### 2. GitHub Pages
 
 Already enabled from `main` / root. `.nojekyll` is included.
 
