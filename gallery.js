@@ -60,22 +60,29 @@
     var desktop = isDesktopViewport();
     var portrait = isPortrait({ width: natWidth, height: natHeight });
     var sidePadding = desktop ? 48 : 32;
-    var maxW = Math.min(SLIDESHOW_MAX_WIDTH, window.innerWidth - sidePadding);
+    var viewportW = Math.max(window.innerWidth || 0, 320);
+    var viewportH = Math.max(window.innerHeight || 0, 480);
+    var maxW = Math.max(240, Math.min(SLIDESHOW_MAX_WIDTH, viewportW - sidePadding));
     var heightRatio = desktop
       ? portrait
         ? SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO
         : SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO
       : SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO;
+    var maxH = Math.max(180, Math.round(viewportH * heightRatio));
 
     return {
       maxW: maxW,
-      maxH: Math.round(window.innerHeight * heightRatio),
+      maxH: maxH,
       desktop: desktop,
       portrait: portrait,
     };
   }
 
   function computeDisplaySize(natWidth, natHeight) {
+    if (!natWidth || !natHeight) {
+      return { width: 320, height: 240 };
+    }
+
     var limits = getSlideshowLimits(natWidth, natHeight);
     var scale;
 
@@ -88,22 +95,29 @@
       scale = Math.min(limits.maxW / natWidth, limits.maxH / natHeight);
     }
 
+    if (!isFinite(scale) || scale <= 0) {
+      scale = 0.3;
+    }
+
     return {
-      width: Math.round(natWidth * scale),
-      height: Math.round(natHeight * scale),
+      width: Math.max(240, Math.round(natWidth * scale)),
+      height: Math.max(180, Math.round(natHeight * scale)),
     };
   }
 
   function updateSlideshowLayout(index) {
-    var slide = getSlides()[index];
-    if (!slide) return;
-
-    var media = slide.querySelector(".slideshow__media");
     var item = items[index];
+    if (!item) return;
+
+    var slide = getSlides()[index];
+    var media = slide ? slide.querySelector(".slideshow__media") : null;
     var dims = getItemDimensions(item, media);
-    if (!dims) return;
+    if (!dims) {
+      dims = { width: 4, height: 3 };
+    }
 
     var size = computeDisplaySize(dims.width, dims.height);
+    slideshowEl.style.setProperty("--slideshow-aspect", dims.width + " / " + dims.height);
     slideshowEl.style.width = size.width + "px";
     slideshowEl.style.height = size.height + "px";
     slideshowEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
@@ -236,7 +250,9 @@
     });
 
     window.addEventListener("resize", function () {
-      updateSlideshowLayout(currentIndex);
+      window.requestAnimationFrame(function () {
+        updateSlideshowLayout(currentIndex);
+      });
     });
   }
 
@@ -389,6 +405,12 @@
   buildSlideshow();
   buildGallery();
   updateSlideshowLayout(0);
+  window.requestAnimationFrame(function () {
+    updateSlideshowLayout(currentIndex);
+  });
+  window.addEventListener("load", function () {
+    updateSlideshowLayout(currentIndex);
+  });
   playActiveVideo();
   scheduleNext();
 })();
