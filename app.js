@@ -53,7 +53,9 @@
 
   let celebrationStarted = false;
   let storageReady = false;
-  let apiUrl = "";
+  var binId = "";
+  var accessKey = "";
+  var MAX_MESSAGES = 100;
 
   function pad(n) {
     var num = Number(n);
@@ -242,59 +244,102 @@
     if (err && err.error === "locked") {
       return "Messages are locked until the birthday — use ?test=1 to preview reads.";
     }
-    if (err && err.error === "auth") {
-      return "Message load failed — redeploy Apps Script with Who has access: Anyone";
+    if (err && err.error === "limit") {
+      return "Message limit reached (100 max).";
     }
     return err && err.message ? err.message : "Could not complete request. Please try again.";
   }
 
+  function binHeaders() {
+    return {
+      "Content-Type": "application/json",
+      "X-Access-Key": accessKey,
+    };
+  }
+
+  function binUrl() {
+    return "https://api.jsonbin.io/v3/b/" + binId + "/latest";
+  }
+
   function initStorage() {
-    apiUrl = window.MESSAGES_API_URL || "";
-    if (!apiUrl || apiUrl === "YOUR_APPS_SCRIPT_WEB_APP_URL") {
+    var config = window.MESSAGES_CONFIG || {};
+    binId = config.binId || "";
+    accessKey = config.accessKey || "";
+
+    if (!binId || binId === "YOUR_BIN_ID" || !accessKey || accessKey === "YOUR_ACCESS_KEY") {
       setStorageStatus("Message storage not configured — see MESSAGES_SETUP.md", "error");
       if (els.submitBtn) els.submitBtn.disabled = true;
       return false;
     }
+
     storageReady = true;
-    setStorageStatus("Message storage connected", "ready");
-    if (els.submitBtn) els.submitBtn.disabled = false;
+    setStorageStatus("Checking message storage…", "checking");
+    if (els.submitBtn) els.submitBtn.disabled = true;
+
+    fetch(binUrl(), { headers: binHeaders() })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Could not reach message storage — check bin ID and access key.");
+        return response.json();
+      })
+      .then(function () {
+        setStorageStatus("Message storage connected", "ready");
+        if (els.submitBtn) els.submitBtn.disabled = false;
+      })
+      .catch(function (err) {
+        console.error("Storage check failed:", err);
+        setStorageStatus(err.message || "Message storage failed to connect", "error");
+        if (els.submitBtn) els.submitBtn.disabled = true;
+        storageReady = false;
+      });
+
     return true;
   }
 
-  async function apiRequest(body) {
-    var response = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(body),
+  async function fetchBin() {
+    var response = await fetch(binUrl(), { headers: binHeaders() });
+    if (!response.ok) {
+      throw new Error("Could not reach message storage — check bin ID and access key.");
+    }
+    var data = await response.json();
+    return data.record || { messages: [] };
+  }
+
+  async function saveBin(record) {
+    var response = await fetch("https://api.jsonbin.io/v3/b/" + binId, {
+      method: "PUT",
+      headers: binHeaders(),
+      body: JSON.stringify(record),
     });
-    var text = await response.text();
-    var data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseErr) {
-      var err = new Error(
-        "Message load failed — redeploy Apps Script with Who has access: Anyone"
-      );
-      err.error = "auth";
-      throw err;
+    if (!response.ok) {
+      throw new Error("Could not save message — check access key has Update permission.");
     }
-    if (!data.ok) {
-      var fail = new Error(data.error || "Request failed");
-      fail.error = data.error;
-      throw fail;
-    }
-    return data;
   }
 
   async function submitMessage(name, message) {
-    if (!storageReady || !apiUrl) {
+    if (!storageReady || !binId || !accessKey) {
       throw new Error("Message storage is not configured yet.");
     }
-    await apiRequest({ action: "submit", name: name, message: message });
+
+    var record = await fetchBin();
+    var messages = record.messages || [];
+
+    if (messages.length >= MAX_MESSAGES) {
+      var limitErr = new Error("Message limit reached.");
+      limitErr.error = "limit";
+      throw limitErr;
+    }
+
+    messages.push({
+      name: name.trim(),
+      message: message.trim(),
+      createdAt: new Date().toISOString(),
+    });
+
+    await saveBin({ messages: messages });
   }
 
   async function loadMessages() {
-    if (!storageReady || !apiUrl) {
+    if (!storageReady || !binId || !accessKey) {
       if (els.formHint) {
         els.formHint.textContent =
           "Storage not configured — use Sample messages to preview the layout.";
@@ -302,19 +347,22 @@
       return false;
     }
 
+    if (!testMode && !celebrationStarted && getRemaining().total > 0) {
+      if (els.formHint) {
+        els.formHint.textContent =
+          "Messages are locked until the birthday. Use ?test=1 to preview.";
+      }
+      return false;
+    }
+
     try {
-      var data = await apiRequest({ action: "list", test: testMode ? "1" : "0" });
-      renderMessageCards(data.messages || []);
+      var record = await fetchBin();
+      renderMessageCards(record.messages || []);
       return true;
     } catch (e) {
       console.error("Failed to load messages:", e);
       if (els.formHint) {
-        if (e.error === "locked") {
-          els.formHint.textContent =
-            "Messages are locked until the birthday. Use ?test=1 to preview.";
-        } else {
-          els.formHint.textContent = storageErrorMessage(e);
-        }
+        els.formHint.textContent = storageErrorMessage(e);
       }
       return false;
     }

@@ -10,17 +10,9 @@ Hosted on GitHub Pages.
 
 Replace the placeholder image URL in `index.html` (`#hero-photo` `src`) with Taylor's photo URL.
 
-### 2. Message storage (Google Sheets — ~5 min)
+### 2. Message storage (JSONBin.io — ~3 min)
 
-See **[MESSAGES_SETUP.md](MESSAGES_SETUP.md)** for the full walkthrough. Short version:
-
-1. Create a Google Sheet
-2. Paste `google-apps-script.gs` into **Extensions → Apps Script**
-3. **Deploy → Web app** (Execute as: Me, Access: Anyone)
-4. Paste the web app URL into `messages-config.js`
-5. Push to GitHub
-
-No Firebase, no database console, no security rules. Messages show up in your spreadsheet and on the site at zero.
+See **[MESSAGES_SETUP.md](MESSAGES_SETUP.md)**. Create a free JSONBin account, make a bin, paste the ID and access key into `messages-config.js`, and push.
 
 ### 3. GitHub Pages
 

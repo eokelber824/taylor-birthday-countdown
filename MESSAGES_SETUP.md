@@ -1,37 +1,41 @@
-# Message storage setup (Google Sheets)
+# Message storage setup (JSONBin.io)
 
-Much simpler than Firebase for ~100 birthday messages. Everything lives in one Google Sheet you can open anytime.
+Takes about 3 minutes. No Google auth, no deployments, works from GitHub Pages.
 
-## 1. Create a Google Sheet
+## 1. Create a free account
 
-1. Go to [Google Sheets](https://sheets.google.com)
-2. Create a blank spreadsheet
-3. Name it something like `Taylor Birthday Messages`
+Go to [jsonbin.io](https://jsonbin.io) and sign up (free tier is plenty for ~100 messages).
 
-## 2. Add the script
+## 2. Create a bin
 
-1. In the sheet: **Extensions → Apps Script**
-2. Delete any placeholder code
-3. Paste the entire contents of `google-apps-script.gs` from this repo
-4. Click **Save** (name the project `Taylor Messages`)
+1. Click **Create Bin**
+2. Paste this as the contents:
 
-## 3. Deploy as a web app
+```json
+{
+  "messages": []
+}
+```
 
-1. Click **Deploy → New deployment**
-2. Click the gear icon → select **Web app**
-3. Settings:
-   - **Execute as:** Me
-   - **Who has access:** Anyone ← must say exactly **Anyone**, not "Anyone with Google account"
-4. Click **Deploy**
-5. Authorize when prompted (Google will warn it's unverified — that's normal for personal scripts; click Advanced → Go to …)
-6. **Copy the Web app URL** (looks like `https://script.google.com/macros/s/...../exec`)
+3. Save — copy the **Bin ID** from the URL or bin page (looks like `67a1b2c3d4e5f6789012345`)
+
+## 3. Create an access key
+
+1. Go to **API Keys** in the sidebar
+2. Click **Create Access Key**
+3. Give it a name (e.g. `taylor-birthday`)
+4. Enable **Read** and **Update** on your bin
+5. Copy the access key
 
 ## 4. Connect the site
 
-Paste your URL into `messages-config.js`:
+Paste into `messages-config.js`:
 
 ```js
-window.MESSAGES_API_URL = "https://script.google.com/macros/s/YOUR_ID/exec";
+window.MESSAGES_CONFIG = {
+  binId: "your-bin-id-here",
+  accessKey: "your-access-key-here",
+};
 ```
 
 Push to GitHub and bump `?v=` in `index.html`.
@@ -40,24 +44,21 @@ Push to GitHub and bump `?v=` in `index.html`.
 
 Open: `https://eokelber824.github.io/taylor-birthday-countdown/?test=1`
 
-- You should see green **"Message storage connected"**
+- Green **"Message storage connected"** = working
 - Submit a test message
-- Open your Google Sheet — the message should appear on the `Messages` tab
-- Click **Reveal messages** in test mode to load them on the page
+- Click **Reveal messages** to see it on the page
+- View/edit all messages anytime at [jsonbin.io](https://jsonbin.io) in your bin
 
 ## Notes
 
-- **Submit** works anytime (up to 100 messages)
-- **Read on the website** is locked until July 20, 2026 9:00 AM Pacific (same as before)
-- In `?test=1` mode, reads work early so you can preview
-- You can always view messages directly in the Google Sheet
+- Up to **100 messages** (enforced by the site)
+- Messages are **hidden on the website** until the countdown hits zero
+- The access key is visible in the page source — fine for low-stakes birthday notes, but don't reuse it elsewhere
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Red "not configured" on site | Paste web app URL into `messages-config.js` |
-| Submit fails | Redeploy script with **Who has access: Anyone** (create a new deployment version) |
-| "Message load failed" / sign-in page | Same fix — access must be **Anyone**, then Deploy → Manage deployments → Edit → New version |
-| Reveal messages fails before birthday | Expected — use `?test=1` or check the Sheet directly |
-| "Message limit reached" | 100 message cap (adjust `MAX_MESSAGES` in the script if needed) |
+| Red "not configured" | Fill in both `binId` and `accessKey` in `messages-config.js` |
+| "Could not reach message storage" | Check bin ID and access key; key needs Read + Update |
+| Submit works but reveal is empty | Use `?test=1` before the birthday, or wait until countdown hits zero |
