@@ -37,7 +37,6 @@ import {
     seconds: $("seconds"),
     mainTitle: $("main-title"),
     mainSubtitle: $("main-subtitle"),
-    localEventTime: $("local-event-time"),
     footerTime: $("footer-time"),
     confettiCanvas: $("confetti-canvas"),
     messageForm: $("message-form"),
@@ -81,12 +80,6 @@ import {
     } catch (e) {
       return new Date(ms).toString();
     }
-  }
-
-  function updateLocalEventTime() {
-    if (!els.localEventTime) return;
-    els.localEventTime.textContent =
-      "Where you are, that's " + formatLocalTime(TARGET_MS);
   }
 
   function updateFooterTime() {
@@ -351,10 +344,7 @@ import {
     if (els.mainTitle) els.mainTitle.textContent = TITLE_CELEBRATION;
     if (els.mainSubtitle) {
       els.mainSubtitle.innerHTML =
-        "<strong>The wait is over.</strong> Wishing Taylor the happiest birthday.<br>" +
-        '<span class="hero__local">Celebration started at ' +
-        formatLocalTime(TARGET_MS) +
-        "</span>";
+        "<strong>The wait is over.</strong> Wishing Taylor the happiest birthday.";
     }
 
     if (els.days) els.days.textContent = "00";
@@ -375,10 +365,7 @@ import {
     if (els.mainTitle) els.mainTitle.textContent = TITLE_COUNTDOWN;
     if (els.mainSubtitle) {
       els.mainSubtitle.innerHTML =
-        "Celebrating <strong>Monday, July 20, 2026</strong> at <strong>9:00 AM Pacific</strong><br>" +
-        '<span class="hero__local" id="local-event-time">Loading your local time…</span>';
-      els.localEventTime = $("local-event-time");
-      updateLocalEventTime();
+        "Celebrating <strong>Monday, July 20, 2026</strong>";
     }
 
     if (els.messagesSection) els.messagesSection.hidden = true;
@@ -481,7 +468,6 @@ import {
 
   initFirebase();
   initTestPanel();
-  updateLocalEventTime();
   updateFooterTime();
   updateCountdown();
   fitTitleLine();
