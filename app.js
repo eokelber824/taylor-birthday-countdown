@@ -51,6 +51,7 @@ import {
     submitBtn: $("submit-btn"),
     formStatus: $("form-status"),
     formHint: $("form-hint"),
+    storageStatus: $("storage-status"),
     messagesSection: $("messages-section"),
     messagesList: $("messages-list"),
     messagesEmpty: $("messages-empty"),
@@ -243,19 +244,45 @@ import {
     if (els.formStatus) els.formStatus.hidden = true;
   }
 
+  function setStorageStatus(text, state) {
+    if (!els.storageStatus) return;
+    els.storageStatus.textContent = text;
+    els.storageStatus.className = "storage-status storage-status--" + state;
+  }
+
+  function firebaseErrorMessage(err) {
+    var code = err && err.code ? err.code : "";
+    if (code === "permission-denied") {
+      return "Permission denied — publish firestore.rules in Firebase Console.";
+    }
+    if (code === "unavailable") {
+      return "Firestore is unavailable — check that the database is enabled.";
+    }
+    if (code === "failed-precondition") {
+      return "Firestore index required — check the browser console for a setup link.";
+    }
+    return err && err.message ? err.message : "Could not save message. Please try again.";
+  }
+
   function initFirebase() {
     var config = window.FIREBASE_CONFIG;
     if (!config || !config.apiKey || config.apiKey === "YOUR_API_KEY") {
-      console.warn("Firebase not configured — messages will not save.");
+      setStorageStatus("Message storage not configured — see FIREBASE_SETUP.md", "error");
+      if (els.submitBtn) els.submitBtn.disabled = true;
+      console.warn("Firebase not configured — add your web app config to firebase-config.js");
       return false;
     }
     try {
       var app = initializeApp(config);
       db = getFirestore(app);
       firebaseReady = true;
+      setStorageStatus("Message storage connected", "ready");
+      if (els.submitBtn) els.submitBtn.disabled = false;
       return true;
     } catch (e) {
       console.error("Firebase init failed:", e);
+      setStorageStatus("Message storage failed to connect", "error");
+      if (els.submitBtn) els.submitBtn.disabled = true;
       return false;
     }
   }
@@ -326,8 +353,13 @@ import {
     } catch (e) {
       console.error("Failed to load messages:", e);
       if (testMode && els.formHint) {
-        els.formHint.textContent =
-          "Could not load from Firebase (rules may block reads until the birthday). Use Sample messages to preview layout, or submit a real message to test saving.";
+        if (e.code === "permission-denied") {
+          els.formHint.textContent =
+            "Firebase is connected, but reads are locked until the birthday. Use Sample messages to preview layout.";
+        } else {
+          els.formHint.textContent =
+            "Could not load messages from Firebase. Check firestore.rules and the browser console.";
+        }
       }
       return false;
     }
@@ -462,10 +494,7 @@ import {
         showFormStatus("Message saved — it will appear when the countdown ends.", "success");
         if (els.messageForm) els.messageForm.reset();
       } catch (err) {
-        showFormStatus(
-          err.message || "Could not save message. Please try again.",
-          "error"
-        );
+        showFormStatus(firebaseErrorMessage(err), "error");
       } finally {
         if (els.submitBtn) els.submitBtn.disabled = false;
       }

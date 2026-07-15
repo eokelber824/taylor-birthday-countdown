@@ -264,6 +264,30 @@ body.celebration-mode .hero__title {
   color: var(--muted);
 }
 
+.storage-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.storage-status--checking {
+  background: var(--lavender);
+  color: var(--charcoal);
+}
+
+.storage-status--ready {
+  background: rgba(122, 171, 142, 0.18);
+  color: #3d7a4a;
+}
+
+.storage-status--error {
+  background: rgba(166, 61, 61, 0.1);
+  color: #a63d3d;
+}
+
 .field {
   display: grid;
   gap: 0.4rem;
