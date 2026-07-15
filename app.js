@@ -16,8 +16,8 @@ import {
   // Single fixed instant — same countdown for everyone, everywhere.
   const TARGET_MS = 1784563200000;
 
-  const TITLE_COUNTDOWN = "Happy Birthday, Taylor";
-  const TITLE_CELEBRATION = "It's Taylor's Birthday";
+  const TITLE_COUNTDOWN = "🎉 Happy Birthday Taylor 🎂";
+  const TITLE_CELEBRATION = "🥳 Happy Birthday Taylor! 🎂✨";
 
   const params = new URLSearchParams(window.location.search);
   const testMode = params.get("test") === "1";
