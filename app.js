@@ -19,6 +19,15 @@ import {
   const TITLE_COUNTDOWN = "Happy Birthday, Taylor";
   const TITLE_CELEBRATION = "It's Taylor's Birthday";
 
+  const params = new URLSearchParams(window.location.search);
+  const testMode = params.get("test") === "1";
+
+  const SAMPLE_MESSAGES = [
+    { name: "Alex", message: "Happy birthday, Taylor! Wishing you the most wonderful day." },
+    { name: "Jordan", message: "Hope this year brings you everything you're hoping for." },
+    { name: "Sam", message: "So grateful to know you — enjoy every moment today." },
+  ];
+
   const $ = (id) => document.getElementById(id);
 
   const els = {
@@ -40,9 +49,15 @@ import {
     messagesSection: $("messages-section"),
     messagesList: $("messages-list"),
     messagesEmpty: $("messages-empty"),
+    testPanel: $("test-panel"),
+    testCelebration: $("test-celebration"),
+    testMessages: $("test-messages"),
+    testSample: $("test-sample"),
+    testReset: $("test-reset"),
   };
 
   let celebrationStarted = false;
+  let countdownInterval = null;
   let db = null;
   let firebaseReady = false;
 
@@ -160,7 +175,7 @@ import {
     }
 
     function spawn(count) {
-      var colors = ["#c9a87c", "#a67c52", "#f5ebe0", "#faf7f2", "#d4a574"];
+      var colors = ["#d4849a", "#e8927c", "#d4a84b", "#7aab8e", "#ebe4f8", "#fde8d8"];
       var centerX = canvas.width / 2;
       var centerY = canvas.height / 3;
       for (var i = 0; i < count; i++) {
@@ -257,30 +272,29 @@ import {
     });
   }
 
-  function renderMessages(docs) {
+  function renderMessageCards(items) {
     if (!els.messagesList || !els.messagesSection) return;
 
     els.messagesList.innerHTML = "";
 
-    if (docs.length === 0) {
+    if (items.length === 0) {
       if (els.messagesEmpty) els.messagesEmpty.hidden = false;
       return;
     }
 
     if (els.messagesEmpty) els.messagesEmpty.hidden = true;
 
-    docs.forEach(function (doc) {
-      var data = doc.data();
+    items.forEach(function (item) {
       var li = document.createElement("li");
       li.className = "message-card";
 
       var text = document.createElement("p");
       text.className = "message-card__text";
-      text.textContent = data.message || "";
+      text.textContent = item.message || "";
 
       var author = document.createElement("p");
       author.className = "message-card__author";
-      author.textContent = "— " + (data.name || "Anonymous");
+      author.textContent = "— " + (item.name || "Anonymous");
 
       li.appendChild(text);
       li.appendChild(author);
@@ -288,15 +302,35 @@ import {
     });
   }
 
+  function renderMessages(docs) {
+    var items = docs.map(function (doc) {
+      var data = doc.data();
+      return { name: data.name, message: data.message };
+    });
+    renderMessageCards(items);
+  }
+
   async function loadMessages() {
-    if (!firebaseReady || !db) return;
+    if (!firebaseReady || !db) {
+      if (testMode && els.formHint) {
+        els.formHint.textContent =
+          "Firebase not configured — use Sample messages to preview the layout.";
+      }
+      return false;
+    }
 
     try {
       var q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
       var snapshot = await getDocs(q);
       renderMessages(snapshot.docs);
+      return true;
     } catch (e) {
       console.error("Failed to load messages:", e);
+      if (testMode && els.formHint) {
+        els.formHint.textContent =
+          "Could not load from Firebase (rules may block reads until the birthday). Use Sample messages to preview layout, or submit a real message to test saving.";
+      }
+      return false;
     }
   }
 
@@ -309,8 +343,8 @@ import {
     loadMessages();
   }
 
-  function startCelebration() {
-    if (celebrationStarted) return;
+  function startCelebration(preview) {
+    if (celebrationStarted && !preview) return;
     celebrationStarted = true;
     document.body.classList.add("celebration-mode");
 
@@ -333,9 +367,70 @@ import {
     fitTitleLine();
   }
 
+  function resetCelebration() {
+    celebrationStarted = false;
+    lastSecond = -1;
+    document.body.classList.remove("celebration-mode");
+
+    if (els.mainTitle) els.mainTitle.textContent = TITLE_COUNTDOWN;
+    if (els.mainSubtitle) {
+      els.mainSubtitle.innerHTML =
+        "Celebrating <strong>Monday, July 20, 2026</strong> at <strong>9:00 AM Pacific</strong><br>" +
+        '<span class="hero__local" id="local-event-time">Loading your local time…</span>';
+      els.localEventTime = $("local-event-time");
+      updateLocalEventTime();
+    }
+
+    if (els.messagesSection) els.messagesSection.hidden = true;
+    if (els.messagesList) els.messagesList.innerHTML = "";
+    if (els.messagesEmpty) els.messagesEmpty.hidden = true;
+    if (els.formHint) {
+      els.formHint.textContent =
+        "Your message will be revealed when the countdown reaches zero.";
+    }
+
+    updateCountdown();
+    fitTitleLine();
+  }
+
+  function initTestPanel() {
+    if (!testMode || !els.testPanel) return;
+    els.testPanel.hidden = false;
+
+    if (els.testCelebration) {
+      els.testCelebration.addEventListener("click", function () {
+        startCelebration(true);
+      });
+    }
+
+    if (els.testMessages) {
+      els.testMessages.addEventListener("click", function () {
+        revealMessages();
+      });
+    }
+
+    if (els.testSample) {
+      els.testSample.addEventListener("click", function () {
+        if (els.messagesSection) els.messagesSection.hidden = false;
+        if (els.formHint) {
+          els.formHint.textContent = "Previewing sample messages (test mode):";
+        }
+        renderMessageCards(SAMPLE_MESSAGES);
+      });
+    }
+
+    if (els.testReset) {
+      els.testReset.addEventListener("click", function () {
+        resetCelebration();
+      });
+    }
+  }
+
   var lastSecond = -1;
 
   function updateCountdown() {
+    if (celebrationStarted) return;
+
     var r = getRemaining();
 
     if (r.total <= 0) {
@@ -385,6 +480,7 @@ import {
   }
 
   initFirebase();
+  initTestPanel();
   updateLocalEventTime();
   updateFooterTime();
   updateCountdown();

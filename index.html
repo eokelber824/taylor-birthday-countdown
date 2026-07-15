@@ -8,10 +8,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <aside class="test-panel" id="test-panel" hidden>
+    <p class="test-panel__label">Test mode</p>
+    <div class="test-panel__actions">
+      <button type="button" class="btn btn--small" id="test-celebration">Preview celebration</button>
+      <button type="button" class="btn btn--small btn--ghost" id="test-messages">Reveal messages</button>
+      <button type="button" class="btn btn--small btn--ghost" id="test-sample">Sample messages</button>
+      <button type="button" class="btn btn--small btn--ghost" id="test-reset">Reset preview</button>
+    </div>
+  </aside>
 
   <main>
     <section class="hero" id="hero">
@@ -88,7 +98,7 @@
     <p id="footer-time">Synchronizing…</p>
   </footer>
 
-  <script src="firebase-config.js?v=1"></script>
-  <script type="module" src="app.js?v=1"></script>
+  <script src="firebase-config.js?v=2"></script>
+  <script type="module" src="app.js?v=2"></script>
 </body>
 </html>

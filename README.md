@@ -33,13 +33,30 @@ Rules enforce:
 2. Settings → Pages → Source: **Deploy from branch** → `main` / **root**.
 3. Ensure `.nojekyll` is present (already included).
 
-### 4. Cache busting
+### 4. Test mode
+
+Add `?test=1` to the URL to open a bottom test bar (not visible to normal visitors):
+
+```
+https://eokelber824.github.io/taylor-birthday-countdown/?test=1
+```
+
+| Button | What it does |
+|--------|----------------|
+| **Preview celebration** | Triggers confetti + birthday state |
+| **Reveal messages** | Shows message section and loads from Firebase |
+| **Sample messages** | Previews the message card layout locally |
+| **Reset preview** | Returns to live countdown state |
+
+**Testing messages:** Submit works anytime (Firestore `create` is open). Reads are blocked by rules until the birthday — use **Sample messages** to preview layout, or temporarily relax `firestore.rules` read rule while testing.
+
+### 5. Cache busting
 
 When you change CSS or JS, bump the `?v=` query string in `index.html`:
 
-- `styles.css?v=1`
-- `app.js?v=1`
-- `firebase-config.js?v=1`
+- `styles.css?v=2`
+- `app.js?v=2`
+- `firebase-config.js?v=2`
 
 ## Countdown math
 

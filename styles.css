@@ -1,12 +1,17 @@
 :root {
   --cream: #faf7f2;
   --warm-white: #fffefb;
-  --blush: #f5ebe0;
-  --rose: #c9a87c;
-  --rose-deep: #a67c52;
+  --blush: #f8e8ee;
+  --peach: #fde8d8;
+  --lavender: #ebe4f8;
+  --rose: #d4849a;
+  --rose-deep: #b85c7a;
+  --coral: #e8927c;
+  --gold: #d4a84b;
+  --sage: #7aab8e;
   --charcoal: #2c2825;
   --muted: #7a7268;
-  --border: rgba(166, 124, 82, 0.2);
+  --border: rgba(184, 92, 122, 0.18);
   --shadow: rgba(44, 40, 37, 0.08);
 }
 
@@ -25,12 +30,20 @@ body {
   min-height: 100vh;
   font-family: "Inter", system-ui, sans-serif;
   color: var(--charcoal);
-  background: var(--cream);
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(253, 232, 216, 0.7), transparent 45%),
+    radial-gradient(ellipse at 85% 10%, rgba(235, 228, 248, 0.55), transparent 40%),
+    radial-gradient(ellipse at 50% 100%, rgba(248, 232, 238, 0.5), transparent 50%),
+    var(--cream);
   line-height: 1.5;
 }
 
 body.celebration-mode {
-  background: linear-gradient(180deg, var(--warm-white) 0%, var(--blush) 100%);
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(253, 232, 216, 0.85), transparent 50%),
+    radial-gradient(ellipse at 70% 20%, rgba(235, 228, 248, 0.7), transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(212, 168, 75, 0.15), transparent 55%),
+    linear-gradient(180deg, var(--warm-white) 0%, var(--blush) 100%);
 }
 
 #confetti-canvas {
@@ -43,10 +56,40 @@ body.celebration-mode {
   display: none;
 }
 
+.test-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(44, 40, 37, 0.92);
+  color: var(--warm-white);
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.test-panel__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+}
+
+.test-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 main {
   max-width: 640px;
   margin: 0 auto;
   padding: 2.5rem 1.25rem 3rem;
+}
+
+body:has(.test-panel:not([hidden])) main {
+  padding-bottom: 6rem;
 }
 
 .hero {
@@ -57,6 +100,10 @@ main {
 .hero__photo-wrap {
   margin: 0 auto 1.75rem;
   width: min(280px, 72vw);
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--coral), var(--gold), var(--lavender));
+  box-shadow: 0 6px 28px rgba(184, 92, 122, 0.2);
 }
 
 .hero__photo {
@@ -66,9 +113,6 @@ main {
   object-fit: cover;
   border-radius: 50%;
   border: 3px solid var(--warm-white);
-  box-shadow:
-    0 4px 24px var(--shadow),
-    0 0 0 1px var(--border);
 }
 
 .hero__title-wrap {
@@ -94,7 +138,10 @@ main {
 }
 
 body.celebration-mode .hero__title {
-  color: var(--rose-deep);
+  background: linear-gradient(120deg, var(--rose-deep), var(--coral), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .hero__subtitle {
@@ -105,7 +152,7 @@ body.celebration-mode .hero__title {
 }
 
 .hero__subtitle strong {
-  color: var(--charcoal);
+  color: var(--rose-deep);
   font-weight: 500;
 }
 
@@ -129,7 +176,23 @@ body.celebration-mode .hero__title {
   padding: 1rem 0.85rem 0.75rem;
   min-width: 4.75rem;
   box-shadow: 0 2px 12px var(--shadow);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.countdown__unit:nth-child(1) {
+  border-top: 3px solid var(--rose);
+}
+
+.countdown__unit:nth-child(3) {
+  border-top: 3px solid var(--coral);
+}
+
+.countdown__unit:nth-child(5) {
+  border-top: 3px solid var(--gold);
+}
+
+.countdown__unit:nth-child(7) {
+  border-top: 3px solid var(--sage);
 }
 
 .countdown__unit.tick {
@@ -159,7 +222,7 @@ body.celebration-mode .hero__title {
 .countdown__sep {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1.75rem;
-  color: var(--rose);
+  color: var(--coral);
   align-self: center;
   font-weight: 500;
 }
@@ -171,6 +234,14 @@ body.celebration-mode .hero__title {
   padding: 1.5rem;
   margin-bottom: 1.25rem;
   box-shadow: 0 2px 16px var(--shadow);
+}
+
+.panel--message {
+  border-top: 3px solid var(--lavender);
+}
+
+.panel--messages {
+  border-top: 3px solid var(--gold);
 }
 
 .panel__heading {
@@ -208,13 +279,14 @@ body.celebration-mode .hero__title {
   border: 1px solid var(--border);
   background: var(--cream);
   color: var(--charcoal);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .field input:focus,
 .field textarea:focus {
   outline: none;
   border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(212, 132, 154, 0.15);
 }
 
 .field textarea {
@@ -230,19 +302,37 @@ body.celebration-mode .hero__title {
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  background: var(--rose-deep);
+  background: linear-gradient(135deg, var(--rose-deep), var(--coral));
   color: var(--warm-white);
-  transition: background 0.15s, transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 3px 14px rgba(184, 92, 122, 0.25);
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--charcoal);
   transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(184, 92, 122, 0.35);
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn--small {
+  font-size: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  box-shadow: none;
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 254, 251, 0.35);
+  color: var(--warm-white);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 254, 251, 0.1);
+  box-shadow: none;
 }
 
 .form-status {
@@ -251,7 +341,7 @@ body.celebration-mode .hero__title {
 }
 
 .form-status--success {
-  color: #3d7a4a;
+  color: var(--sage);
 }
 
 .form-status--error {
@@ -268,9 +358,13 @@ body.celebration-mode .hero__title {
 
 .message-card {
   padding: 1rem 1.1rem;
-  background: var(--cream);
+  background: linear-gradient(135deg, var(--cream), var(--peach));
   border-radius: 12px;
   border: 1px solid var(--border);
+}
+
+.message-card:nth-child(even) {
+  background: linear-gradient(135deg, var(--cream), var(--lavender));
 }
 
 .message-card__text {
@@ -283,7 +377,7 @@ body.celebration-mode .hero__title {
 .message-card__author {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--rose-deep);
   font-style: italic;
 }
 
