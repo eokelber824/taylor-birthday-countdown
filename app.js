@@ -1,14 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-
 (function () {
   "use strict";
 
@@ -63,9 +52,8 @@ import {
   };
 
   let celebrationStarted = false;
-  let countdownInterval = null;
-  let db = null;
-  let firebaseReady = false;
+  let storageReady = false;
+  let apiUrl = "";
 
   function pad(n) {
     var num = Number(n);
@@ -250,52 +238,82 @@ import {
     els.storageStatus.className = "storage-status storage-status--" + state;
   }
 
-  function firebaseErrorMessage(err) {
-    var code = err && err.code ? err.code : "";
-    if (code === "permission-denied") {
-      return "Permission denied — publish firestore.rules in Firebase Console.";
+  function storageErrorMessage(err) {
+    if (err && err.error === "locked") {
+      return "Messages are locked until the birthday — use ?test=1 to preview reads.";
     }
-    if (code === "unavailable") {
-      return "Firestore is unavailable — check that the database is enabled.";
-    }
-    if (code === "failed-precondition") {
-      return "Firestore index required — check the browser console for a setup link.";
-    }
-    return err && err.message ? err.message : "Could not save message. Please try again.";
+    return err && err.message ? err.message : "Could not complete request. Please try again.";
   }
 
-  function initFirebase() {
-    var config = window.FIREBASE_CONFIG;
-    if (!config || !config.apiKey || config.apiKey === "YOUR_API_KEY") {
-      setStorageStatus("Message storage not configured — see FIREBASE_SETUP.md", "error");
-      if (els.submitBtn) els.submitBtn.disabled = true;
-      console.warn("Firebase not configured — add your web app config to firebase-config.js");
-      return false;
-    }
-    try {
-      var app = initializeApp(config);
-      db = getFirestore(app);
-      firebaseReady = true;
-      setStorageStatus("Message storage connected", "ready");
-      if (els.submitBtn) els.submitBtn.disabled = false;
-      return true;
-    } catch (e) {
-      console.error("Firebase init failed:", e);
-      setStorageStatus("Message storage failed to connect", "error");
+  function initStorage() {
+    apiUrl = window.MESSAGES_API_URL || "";
+    if (!apiUrl || apiUrl === "YOUR_APPS_SCRIPT_WEB_APP_URL") {
+      setStorageStatus("Message storage not configured — see MESSAGES_SETUP.md", "error");
       if (els.submitBtn) els.submitBtn.disabled = true;
       return false;
     }
+    storageReady = true;
+    setStorageStatus("Message storage connected", "ready");
+    if (els.submitBtn) els.submitBtn.disabled = false;
+    return true;
+  }
+
+  async function apiRequest(body) {
+    var response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body),
+    });
+    var data = await response.json();
+    if (!data.ok) {
+      var err = new Error(data.error || "Request failed");
+      err.error = data.error;
+      throw err;
+    }
+    return data;
   }
 
   async function submitMessage(name, message) {
-    if (!firebaseReady || !db) {
+    if (!storageReady || !apiUrl) {
       throw new Error("Message storage is not configured yet.");
     }
-    await addDoc(collection(db, "messages"), {
-      name: name.trim(),
-      message: message.trim(),
-      createdAt: serverTimestamp(),
-    });
+    await apiRequest({ action: "submit", name: name, message: message });
+  }
+
+  async function loadMessages() {
+    if (!storageReady || !apiUrl) {
+      if (testMode && els.formHint) {
+        els.formHint.textContent =
+          "Storage not configured — use Sample messages to preview the layout.";
+      }
+      return false;
+    }
+
+    try {
+      var listUrl = apiUrl + "?action=list";
+      if (testMode) listUrl += "&test=1";
+
+      var response = await fetch(listUrl);
+      var data = await response.json();
+      if (!data.ok) {
+        var err = new Error(data.error || "Could not load messages");
+        err.error = data.error;
+        throw err;
+      }
+      renderMessageCards(data.messages || []);
+      return true;
+    } catch (e) {
+      console.error("Failed to load messages:", e);
+      if (testMode && els.formHint) {
+        if (e.error === "locked") {
+          els.formHint.textContent =
+            "Messages are locked until the birthday. Use Sample messages to preview layout.";
+        } else {
+          els.formHint.textContent = storageErrorMessage(e);
+        }
+      }
+      return false;
+    }
   }
 
   function renderMessageCards(items) {
@@ -326,43 +344,6 @@ import {
       li.appendChild(author);
       els.messagesList.appendChild(li);
     });
-  }
-
-  function renderMessages(docs) {
-    var items = docs.map(function (doc) {
-      var data = doc.data();
-      return { name: data.name, message: data.message };
-    });
-    renderMessageCards(items);
-  }
-
-  async function loadMessages() {
-    if (!firebaseReady || !db) {
-      if (testMode && els.formHint) {
-        els.formHint.textContent =
-          "Firebase not configured — use Sample messages to preview the layout.";
-      }
-      return false;
-    }
-
-    try {
-      var q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
-      var snapshot = await getDocs(q);
-      renderMessages(snapshot.docs);
-      return true;
-    } catch (e) {
-      console.error("Failed to load messages:", e);
-      if (testMode && els.formHint) {
-        if (e.code === "permission-denied") {
-          els.formHint.textContent =
-            "Firebase is connected, but reads are locked until the birthday. Use Sample messages to preview layout.";
-        } else {
-          els.formHint.textContent =
-            "Could not load messages from Firebase. Check firestore.rules and the browser console.";
-        }
-      }
-      return false;
-    }
   }
 
   function revealMessages() {
@@ -494,14 +475,14 @@ import {
         showFormStatus("Message saved — it will appear when the countdown ends.", "success");
         if (els.messageForm) els.messageForm.reset();
       } catch (err) {
-        showFormStatus(firebaseErrorMessage(err), "error");
+        showFormStatus(storageErrorMessage(err), "error");
       } finally {
         if (els.submitBtn) els.submitBtn.disabled = false;
       }
     });
   }
 
-  initFirebase();
+  initStorage();
   initTestPanel();
   updateFooterTime();
   updateCountdown();
