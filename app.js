@@ -37,6 +37,7 @@
     footerTime: $("footer-time"),
     confettiCanvas: $("confetti-canvas"),
     messageForm: $("message-form"),
+    messageFormSection: $("message-form-section"),
     submitterName: $("submitter-name"),
     messageText: $("message-text"),
     submitBtn: $("submit-btn"),
@@ -475,6 +476,7 @@
     if (els.seconds) els.seconds.textContent = "00";
 
     confetti.startContinuous();
+    if (els.messageFormSection) els.messageFormSection.hidden = true;
     revealMessages();
     fitTitleLine();
   }
@@ -492,6 +494,7 @@
     }
 
     if (els.messagesSection) els.messagesSection.hidden = true;
+    if (els.messageFormSection) els.messageFormSection.hidden = false;
     if (els.messagesList) els.messagesList.innerHTML = "";
     if (els.messagesEmpty) els.messagesEmpty.hidden = true;
     if (els.formHint) {
@@ -581,6 +584,8 @@
     els.messageForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       hideFormStatus();
+
+      if (celebrationStarted) return;
 
       var name = els.submitterName ? els.submitterName.value : "";
       var message = els.messageText ? els.messageText.value : "";
