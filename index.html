@@ -11,10 +11,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css?v=14" />
 </head>
 <body>
   <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <section class="slideshow" id="slideshow" aria-label="Photo slideshow"></section>
 
   <aside class="test-panel" id="test-panel" hidden>
     <p class="test-panel__label">Test mode</p>
@@ -94,13 +96,23 @@
       <p class="panel__hint" id="messages-empty" hidden>No messages yet — be the first to write one.</p>
       <ul class="messages-list" id="messages-list"></ul>
     </section>
+
+    <section class="panel panel--gallery" id="gallery-section">
+      <h2 class="panel__heading">Photo gallery</h2>
+      <p class="panel__hint">Tap any photo or video to view full size.</p>
+      <div class="gallery__grid" id="gallery-grid"></div>
+    </section>
   </main>
+
+  <div class="lightbox" id="lightbox" hidden></div>
 
   <footer class="site-footer">
     <p id="footer-time">Synchronizing…</p>
   </footer>
 
-  <script src="messages-config.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <script src="messages-config.js?v=14"></script>
+  <script src="media-manifest.js?v=14"></script>
+  <script src="gallery.js?v=14"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
