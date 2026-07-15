@@ -49,6 +49,7 @@
     testMessages: $("test-messages"),
     testSample: $("test-sample"),
     testReset: $("test-reset"),
+    testClear: $("test-clear"),
   };
 
   let celebrationStarted = false;
@@ -338,6 +339,15 @@
     await saveBin({ messages: messages });
   }
 
+  async function clearAllMessages() {
+    if (!storageReady || !binId || !accessKey) {
+      throw new Error("Message storage is not configured yet.");
+    }
+    await saveBin({ messages: [] });
+    if (els.messagesList) els.messagesList.innerHTML = "";
+    if (els.messagesEmpty) els.messagesEmpty.hidden = false;
+  }
+
   async function loadMessages() {
     if (!storageReady || !binId || !accessKey) {
       if (els.formHint) {
@@ -480,6 +490,24 @@
     if (els.testReset) {
       els.testReset.addEventListener("click", function () {
         resetCelebration();
+      });
+    }
+
+    if (els.testClear) {
+      els.testClear.addEventListener("click", async function () {
+        if (
+          !window.confirm(
+            "Delete ALL submitted birthday messages? This cannot be undone."
+          )
+        ) {
+          return;
+        }
+        try {
+          await clearAllMessages();
+          showFormStatus("All messages deleted.", "success");
+        } catch (err) {
+          showFormStatus(storageErrorMessage(err), "error");
+        }
       });
     }
   }

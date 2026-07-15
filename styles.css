@@ -365,6 +365,18 @@ body.celebration-mode .hero__title {
   box-shadow: none;
 }
 
+.btn--danger {
+  background: transparent;
+  border: 1px solid rgba(166, 61, 61, 0.55);
+  color: #f5b4b4;
+  box-shadow: none;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: rgba(166, 61, 61, 0.25);
+  box-shadow: none;
+}
+
 .form-status {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
