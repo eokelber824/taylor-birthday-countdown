@@ -141,13 +141,86 @@ body:has(.test-panel:not([hidden])) main {
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
   font-style: normal;
   font-weight: 400;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: unset !important;
 }
 
-body.celebration-mode .hero__title {
+body.celebration-mode .hero__title-text {
   background: linear-gradient(120deg, var(--rose-deep), var(--coral), var(--gold));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+body.celebration-mode .hero__subtitle strong {
+  color: var(--rose-deep);
+  animation: subtitle-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes subtitle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+body.celebration-mode {
+  animation: celeb-bg 7s ease-in-out infinite alternate;
+}
+
+@keyframes celeb-bg {
+  0% {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(253, 232, 216, 0.9), transparent 50%),
+      radial-gradient(ellipse at 80% 15%, rgba(235, 228, 248, 0.75), transparent 45%),
+      radial-gradient(ellipse at 50% 100%, rgba(212, 168, 75, 0.2), transparent 55%),
+      linear-gradient(180deg, var(--warm-white) 0%, var(--blush) 100%);
+  }
+  100% {
+    background:
+      radial-gradient(ellipse at 75% 5%, rgba(253, 232, 216, 0.95), transparent 50%),
+      radial-gradient(ellipse at 25% 20%, rgba(235, 228, 248, 0.8), transparent 45%),
+      radial-gradient(ellipse at 50% 100%, rgba(212, 168, 75, 0.25), transparent 55%),
+      linear-gradient(180deg, var(--peach) 0%, var(--lavender) 100%);
+  }
+}
+
+body.celebration-mode .hero__photo-wrap {
+  animation: photo-glow 3s ease-in-out infinite;
+}
+
+@keyframes photo-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 28px rgba(184, 92, 122, 0.25);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 10px 36px rgba(212, 168, 75, 0.35);
+  }
+}
+
+body.celebration-mode .countdown__value {
+  animation: value-shimmer 2s ease-in-out infinite alternate;
+}
+
+@keyframes value-shimmer {
+  0% { color: var(--rose-deep); }
+  100% { color: var(--gold); }
+}
+
+body.celebration-mode .emoji {
+  display: inline-block;
+  animation: emoji-bounce 1.8s ease-in-out infinite;
+}
+
+body.celebration-mode .emoji:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+@keyframes emoji-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .hero__subtitle {
@@ -262,30 +335,6 @@ body.celebration-mode .hero__title {
   margin: 0 0 1.25rem;
   font-size: 0.85rem;
   color: var(--muted);
-}
-
-.storage-status {
-  margin: 0 0 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 0.45rem 0.75rem;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-.storage-status--checking {
-  background: var(--lavender);
-  color: var(--charcoal);
-}
-
-.storage-status--ready {
-  background: rgba(122, 171, 142, 0.18);
-  color: #3d7a4a;
-}
-
-.storage-status--error {
-  background: rgba(166, 61, 61, 0.1);
-  color: #a63d3d;
 }
 
 .field {

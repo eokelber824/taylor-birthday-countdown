@@ -6,9 +6,11 @@
   const TARGET_MS = 1784563200000;
 
   const TITLE_COUNTDOWN =
-    '<span class="emoji" aria-hidden="true">🎉</span> Happy Birthday Taylor <span class="emoji" aria-hidden="true">🎂</span>';
+    '<span class="emoji" aria-hidden="true">🎉</span> <span class="hero__title-text">Happy Birthday Taylor</span> <span class="emoji" aria-hidden="true">🎂</span>';
   const TITLE_CELEBRATION =
-    '<span class="emoji" aria-hidden="true">🥳</span> Happy Birthday Taylor! <span class="emoji" aria-hidden="true">🎂✨</span>';
+    '<span class="emoji" aria-hidden="true">🥳</span> <span class="hero__title-text">Happy Birthday Taylor!</span> <span class="emoji" aria-hidden="true">🎂</span> <span class="emoji" aria-hidden="true">✨</span>';
+  const SUBTITLE_CELEBRATION =
+    "The wait is over!!! Wishing Taylor the happiest birthday here at CISCO";
 
   function setMainTitle(html) {
     if (els.mainTitle) els.mainTitle.innerHTML = html;
@@ -40,7 +42,6 @@
     submitBtn: $("submit-btn"),
     formStatus: $("form-status"),
     formHint: $("form-hint"),
-    storageStatus: $("storage-status"),
     messagesSection: $("messages-section"),
     messagesList: $("messages-list"),
     messagesEmpty: $("messages-empty"),
@@ -135,13 +136,15 @@
   function initConfetti() {
     var canvas = els.confettiCanvas;
     if (!canvas || !canvas.getContext) {
-      return { burst: function () {} };
+      return { burst: function () {}, startContinuous: function () {}, stop: function () {} };
     }
 
     var ctx = canvas.getContext("2d");
     var particles = [];
     var animId = null;
-    var cleanupTimer = null;
+    var spawnInterval = null;
+    var continuousMode = false;
+    var maxParticles = 55;
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -152,25 +155,40 @@
     window.addEventListener("resize", resize);
 
     function stopConfetti() {
+      continuousMode = false;
       if (animId) {
         cancelAnimationFrame(animId);
         animId = null;
       }
-      if (cleanupTimer) {
-        clearTimeout(cleanupTimer);
-        cleanupTimer = null;
+      if (spawnInterval) {
+        clearInterval(spawnInterval);
+        spawnInterval = null;
       }
       particles = [];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       canvas.style.display = "none";
     }
 
-    function spawn(count) {
+    function addParticle(opts) {
+      particles.push({
+        x: opts.x,
+        y: opts.y,
+        w: opts.w,
+        h: opts.h,
+        color: opts.color,
+        vx: opts.vx,
+        vy: opts.vy,
+        rot: opts.rot,
+        vr: opts.vr,
+      });
+    }
+
+    function spawnBurst(count) {
       var colors = ["#d4849a", "#e8927c", "#d4a84b", "#7aab8e", "#ebe4f8", "#fde8d8"];
       var centerX = canvas.width / 2;
       var centerY = canvas.height / 3;
       for (var i = 0; i < count; i++) {
-        particles.push({
+        addParticle({
           x: centerX + (Math.random() - 0.5) * 100,
           y: centerY + (Math.random() - 0.5) * 60,
           w: 5 + Math.random() * 7,
@@ -184,6 +202,23 @@
       }
     }
 
+    function spawnGentle(count) {
+      var colors = ["#d4849a", "#e8927c", "#d4a84b", "#7aab8e", "#fde8d8"];
+      for (var i = 0; i < count; i++) {
+        addParticle({
+          x: Math.random() * canvas.width,
+          y: -10 - Math.random() * 30,
+          w: 4 + Math.random() * 5,
+          h: 2 + Math.random() * 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: 1 + Math.random() * 2,
+          rot: Math.random() * 360,
+          vr: (Math.random() - 0.5) * 4,
+        });
+      }
+    }
+
     function frame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       var alive = [];
@@ -191,7 +226,7 @@
         var p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.12;
+        p.vy += continuousMode ? 0.06 : 0.12;
         p.rot += p.vr;
         if (p.y < canvas.height + 60 && p.x > -60 && p.x < canvas.width + 60) {
           alive.push(p);
@@ -204,20 +239,36 @@
         }
       }
       particles = alive;
-      if (particles.length > 0) {
+
+      if (continuousMode || particles.length > 0) {
         animId = requestAnimationFrame(frame);
       } else {
         stopConfetti();
       }
     }
 
+    function ensureAnimating() {
+      canvas.style.display = "block";
+      if (!animId) animId = requestAnimationFrame(frame);
+    }
+
     return {
       burst: function () {
-        stopConfetti();
+        spawnBurst(80);
+        ensureAnimating();
+      },
+      startContinuous: function () {
+        continuousMode = true;
         canvas.style.display = "block";
-        spawn(80);
-        animId = requestAnimationFrame(frame);
-        cleanupTimer = setTimeout(stopConfetti, 4000);
+        spawnBurst(50);
+        if (spawnInterval) clearInterval(spawnInterval);
+        spawnInterval = setInterval(function () {
+          if (particles.length < maxParticles) spawnGentle(3);
+        }, 1100);
+        ensureAnimating();
+      },
+      stop: function () {
+        stopConfetti();
       },
     };
   }
@@ -235,10 +286,34 @@
     if (els.formStatus) els.formStatus.hidden = true;
   }
 
-  function setStorageStatus(text, state) {
-    if (!els.storageStatus) return;
-    els.storageStatus.textContent = text;
-    els.storageStatus.className = "storage-status storage-status--" + state;
+  function initStorage() {
+    var config = window.MESSAGES_CONFIG || {};
+    binId = config.binId || "";
+    accessKey = config.accessKey || "";
+
+    if (!binId || binId === "YOUR_BIN_ID" || !accessKey || accessKey === "YOUR_ACCESS_KEY") {
+      if (els.submitBtn) els.submitBtn.disabled = true;
+      return false;
+    }
+
+    storageReady = true;
+    if (els.submitBtn) els.submitBtn.disabled = true;
+
+    fetch(binUrl(), { headers: binHeaders() })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Could not reach message storage.");
+        return response.json();
+      })
+      .then(function () {
+        if (els.submitBtn) els.submitBtn.disabled = false;
+      })
+      .catch(function (err) {
+        console.error("Storage check failed:", err);
+        if (els.submitBtn) els.submitBtn.disabled = true;
+        storageReady = false;
+      });
+
+    return true;
   }
 
   function storageErrorMessage(err) {
@@ -260,40 +335,6 @@
 
   function binUrl() {
     return "https://api.jsonbin.io/v3/b/" + binId + "/latest";
-  }
-
-  function initStorage() {
-    var config = window.MESSAGES_CONFIG || {};
-    binId = config.binId || "";
-    accessKey = config.accessKey || "";
-
-    if (!binId || binId === "YOUR_BIN_ID" || !accessKey || accessKey === "YOUR_ACCESS_KEY") {
-      setStorageStatus("Message storage not configured — see MESSAGES_SETUP.md", "error");
-      if (els.submitBtn) els.submitBtn.disabled = true;
-      return false;
-    }
-
-    storageReady = true;
-    setStorageStatus("Checking message storage…", "checking");
-    if (els.submitBtn) els.submitBtn.disabled = true;
-
-    fetch(binUrl(), { headers: binHeaders() })
-      .then(function (response) {
-        if (!response.ok) throw new Error("Could not reach message storage — check bin ID and access key.");
-        return response.json();
-      })
-      .then(function () {
-        setStorageStatus("Message storage connected", "ready");
-        if (els.submitBtn) els.submitBtn.disabled = false;
-      })
-      .catch(function (err) {
-        console.error("Storage check failed:", err);
-        setStorageStatus(err.message || "Message storage failed to connect", "error");
-        if (els.submitBtn) els.submitBtn.disabled = true;
-        storageReady = false;
-      });
-
-    return true;
   }
 
   async function fetchBin() {
@@ -425,7 +466,7 @@
     if (els.mainTitle) setMainTitle(TITLE_CELEBRATION);
     if (els.mainSubtitle) {
       els.mainSubtitle.innerHTML =
-        "<strong>The wait is over.</strong> Wishing Taylor the happiest birthday.";
+        "<strong>" + SUBTITLE_CELEBRATION + "</strong>";
     }
 
     if (els.days) els.days.textContent = "00";
@@ -433,7 +474,7 @@
     if (els.minutes) els.minutes.textContent = "00";
     if (els.seconds) els.seconds.textContent = "00";
 
-    confetti.burst();
+    confetti.startContinuous();
     revealMessages();
     fitTitleLine();
   }
@@ -442,6 +483,7 @@
     celebrationStarted = false;
     lastSecond = -1;
     document.body.classList.remove("celebration-mode");
+    confetti.stop();
 
     if (els.mainTitle) setMainTitle(TITLE_COUNTDOWN);
     if (els.mainSubtitle) {
