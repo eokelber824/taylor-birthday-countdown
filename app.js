@@ -16,8 +16,14 @@ import {
   // Single fixed instant — same countdown for everyone, everywhere.
   const TARGET_MS = 1784563200000;
 
-  const TITLE_COUNTDOWN = "🎉 Happy Birthday Taylor 🎂";
-  const TITLE_CELEBRATION = "🥳 Happy Birthday Taylor! 🎂✨";
+  const TITLE_COUNTDOWN =
+    '<span class="emoji" aria-hidden="true">🎉</span> Happy Birthday Taylor <span class="emoji" aria-hidden="true">🎂</span>';
+  const TITLE_CELEBRATION =
+    '<span class="emoji" aria-hidden="true">🥳</span> Happy Birthday Taylor! <span class="emoji" aria-hidden="true">🎂✨</span>';
+
+  function setMainTitle(html) {
+    if (els.mainTitle) els.mainTitle.innerHTML = html;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const testMode = params.get("test") === "1";
@@ -341,7 +347,7 @@ import {
     celebrationStarted = true;
     document.body.classList.add("celebration-mode");
 
-    if (els.mainTitle) els.mainTitle.textContent = TITLE_CELEBRATION;
+    if (els.mainTitle) setMainTitle(TITLE_CELEBRATION);
     if (els.mainSubtitle) {
       els.mainSubtitle.innerHTML =
         "<strong>The wait is over.</strong> Wishing Taylor the happiest birthday.";
@@ -362,7 +368,7 @@ import {
     lastSecond = -1;
     document.body.classList.remove("celebration-mode");
 
-    if (els.mainTitle) els.mainTitle.textContent = TITLE_COUNTDOWN;
+    if (els.mainTitle) setMainTitle(TITLE_COUNTDOWN);
     if (els.mainSubtitle) {
       els.mainSubtitle.innerHTML =
         "Celebrating <strong>Monday, July 20, 2026</strong>";

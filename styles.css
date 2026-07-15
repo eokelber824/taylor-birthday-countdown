@@ -137,6 +137,12 @@ body:has(.test-panel:not([hidden])) main {
   letter-spacing: 0.02em;
 }
 
+.hero__title .emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+}
+
 body.celebration-mode .hero__title {
   background: linear-gradient(120deg, var(--rose-deep), var(--coral), var(--gold));
   -webkit-background-clip: text;
