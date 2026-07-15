@@ -21,7 +21,7 @@ Much simpler than Firebase for ~100 birthday messages. Everything lives in one G
 2. Click the gear icon → select **Web app**
 3. Settings:
    - **Execute as:** Me
-   - **Who has access:** Anyone
+   - **Who has access:** Anyone ← must say exactly **Anyone**, not "Anyone with Google account"
 4. Click **Deploy**
 5. Authorize when prompted (Google will warn it's unverified — that's normal for personal scripts; click Advanced → Go to …)
 6. **Copy the Web app URL** (looks like `https://script.google.com/macros/s/...../exec`)
@@ -57,6 +57,7 @@ Open: `https://eokelber824.github.io/taylor-birthday-countdown/?test=1`
 | Problem | Fix |
 |---------|-----|
 | Red "not configured" on site | Paste web app URL into `messages-config.js` |
-| Submit fails | Redeploy script with **Who has access: Anyone** |
+| Submit fails | Redeploy script with **Who has access: Anyone** (create a new deployment version) |
+| "Message load failed" / sign-in page | Same fix — access must be **Anyone**, then Deploy → Manage deployments → Edit → New version |
 | Reveal messages fails before birthday | Expected — use `?test=1` or check the Sheet directly |
 | "Message limit reached" | 100 message cap (adjust `MAX_MESSAGES` in the script if needed) |

@@ -1,14 +1,9 @@
 /**
  * Taylor Birthday Messages — Google Apps Script
  *
- * Setup:
- * 1. Create a new Google Sheet
- * 2. Extensions → Apps Script
- * 3. Paste this entire file, save
- * 4. Deploy → New deployment → Web app
- *    - Execute as: Me
- *    - Who has access: Anyone
- * 5. Copy the web app URL into messages-config.js
+ * Deploy → New deployment → Web app
+ *   - Execute as: Me
+ *   - Who has access: Anyone   ← must be "Anyone", not "Anyone with Google account"
  */
 
 var TARGET_MS = 1784563200000; // July 20, 2026 9:00 AM Pacific
@@ -30,9 +25,37 @@ function respond_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function listMessages_(testMode) {
+  if (!testMode && Date.now() < TARGET_MS) {
+    return respond_({ ok: false, error: "locked" });
+  }
+
+  var sheet = setupSheet_();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return respond_({ ok: true, messages: [] });
+  }
+
+  var rows = sheet.getRange(2, 1, lastRow, 3).getValues();
+  var messages = rows.map(function (row) {
+    return {
+      createdAt: row[0],
+      name: row[1],
+      message: row[2],
+    };
+  });
+
+  return respond_({ ok: true, messages: messages });
+}
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
+
+    if (data.action === "list") {
+      return listMessages_(data.test === true || data.test === "1");
+    }
+
     var name = String(data.name || "").trim();
     var message = String(data.message || "").trim();
 
@@ -61,30 +84,8 @@ function doPost(e) {
 
 function doGet(e) {
   var params = e && e.parameter ? e.parameter : {};
-  var action = params.action || "";
-
-  if (action !== "list") {
+  if (params.action !== "list") {
     return respond_({ ok: false, error: "Unknown action." });
   }
-
-  var testMode = params.test === "1";
-  if (!testMode && Date.now() < TARGET_MS) {
-    return respond_({ ok: false, error: "locked" });
-  }
-
-  var sheet = setupSheet_();
-  if (sheet.getLastRow() < 2) {
-    return respond_({ ok: true, messages: [] });
-  }
-
-  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
-  var messages = rows.map(function (row) {
-    return {
-      createdAt: row[0],
-      name: row[1],
-      message: row[2],
-    };
-  });
-
-  return respond_({ ok: true, messages: messages });
+  return listMessages_(params.test === "1");
 }

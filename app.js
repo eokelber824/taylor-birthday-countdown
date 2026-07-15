@@ -242,6 +242,9 @@
     if (err && err.error === "locked") {
       return "Messages are locked until the birthday — use ?test=1 to preview reads.";
     }
+    if (err && err.error === "auth") {
+      return "Message load failed — redeploy Apps Script with Who has access: Anyone";
+    }
     return err && err.message ? err.message : "Could not complete request. Please try again.";
   }
 
@@ -264,11 +267,21 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(body),
     });
-    var data = await response.json();
-    if (!data.ok) {
-      var err = new Error(data.error || "Request failed");
-      err.error = data.error;
+    var text = await response.text();
+    var data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      var err = new Error(
+        "Message load failed — redeploy Apps Script with Who has access: Anyone"
+      );
+      err.error = "auth";
       throw err;
+    }
+    if (!data.ok) {
+      var fail = new Error(data.error || "Request failed");
+      fail.error = data.error;
+      throw fail;
     }
     return data;
   }
@@ -282,7 +295,7 @@
 
   async function loadMessages() {
     if (!storageReady || !apiUrl) {
-      if (testMode && els.formHint) {
+      if (els.formHint) {
         els.formHint.textContent =
           "Storage not configured — use Sample messages to preview the layout.";
       }
@@ -290,24 +303,15 @@
     }
 
     try {
-      var listUrl = apiUrl + "?action=list";
-      if (testMode) listUrl += "&test=1";
-
-      var response = await fetch(listUrl);
-      var data = await response.json();
-      if (!data.ok) {
-        var err = new Error(data.error || "Could not load messages");
-        err.error = data.error;
-        throw err;
-      }
+      var data = await apiRequest({ action: "list", test: testMode ? "1" : "0" });
       renderMessageCards(data.messages || []);
       return true;
     } catch (e) {
       console.error("Failed to load messages:", e);
-      if (testMode && els.formHint) {
+      if (els.formHint) {
         if (e.error === "locked") {
           els.formHint.textContent =
-            "Messages are locked until the birthday. Use Sample messages to preview layout.";
+            "Messages are locked until the birthday. Use ?test=1 to preview.";
         } else {
           els.formHint.textContent = storageErrorMessage(e);
         }
