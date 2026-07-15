@@ -14,7 +14,10 @@
   var IMAGE_SLIDE_MS = 5000;
   var VIDEO_SLIDE_MS = 7000;
   var SLIDESHOW_MAX_WIDTH = 960;
-  var SLIDESHOW_MAX_HEIGHT_RATIO = 0.38;
+  var SLIDESHOW_DESKTOP_BREAKPOINT = 768;
+  var SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO = 0.38;
+  var SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO = 0.55;
+  var SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO = 0.58;
 
   function slideDuration(index) {
     var item = items[index];
@@ -49,10 +52,42 @@
     return dims.height > dims.width;
   }
 
+  function isDesktopViewport() {
+    return window.innerWidth >= SLIDESHOW_DESKTOP_BREAKPOINT;
+  }
+
+  function getSlideshowLimits(natWidth, natHeight) {
+    var desktop = isDesktopViewport();
+    var portrait = isPortrait({ width: natWidth, height: natHeight });
+    var sidePadding = desktop ? 48 : 32;
+    var maxW = Math.min(SLIDESHOW_MAX_WIDTH, window.innerWidth - sidePadding);
+    var heightRatio = desktop
+      ? portrait
+        ? SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO
+        : SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO
+      : SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO;
+
+    return {
+      maxW: maxW,
+      maxH: Math.round(window.innerHeight * heightRatio),
+      desktop: desktop,
+      portrait: portrait,
+    };
+  }
+
   function computeDisplaySize(natWidth, natHeight) {
-    var maxW = Math.min(SLIDESHOW_MAX_WIDTH, window.innerWidth - 32);
-    var maxH = Math.round(window.innerHeight * SLIDESHOW_MAX_HEIGHT_RATIO);
-    var scale = Math.min(maxW / natWidth, maxH / natHeight);
+    var limits = getSlideshowLimits(natWidth, natHeight);
+    var scale;
+
+    if (limits.desktop && !limits.portrait) {
+      scale = limits.maxW / natWidth;
+      if (natHeight * scale > limits.maxH) {
+        scale = limits.maxH / natHeight;
+      }
+    } else {
+      scale = Math.min(limits.maxW / natWidth, limits.maxH / natHeight);
+    }
+
     return {
       width: Math.round(natWidth * scale),
       height: Math.round(natHeight * scale),
@@ -72,6 +107,7 @@
     slideshowEl.style.width = size.width + "px";
     slideshowEl.style.height = size.height + "px";
     slideshowEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
+    slideshowEl.dataset.viewport = isDesktopViewport() ? "desktop" : "mobile";
   }
 
   function applyIntrinsicSize(el, item) {
