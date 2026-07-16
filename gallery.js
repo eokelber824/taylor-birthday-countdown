@@ -287,7 +287,7 @@
     });
 
     window.addEventListener("pageshow", function (event) {
-      if (event.persisted) {
+      if (event.persisted && slideshowEl.dataset.galleryReady !== "1") {
         initGallery();
       }
     });
