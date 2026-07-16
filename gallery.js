@@ -1,33 +1,100 @@
 (function () {
   "use strict";
 
-  var items = (window.MEDIA_ITEMS || []).map(function (item) {
-    return {
-      type: item.type,
-      src: item.src,
-      alt: item.alt || "",
-      width: item.width,
-      height: item.height,
-    };
-  });
-  if (!items.length) return;
+  var MEDIA_BASE = "/taylor-birthday-countdown/media/";
+
+  var items = [
+    {
+      type: "image",
+      src: MEDIA_BASE + "img-9990.png",
+      alt: "Friends gathered for a birthday dinner",
+      width: 1024,
+      height: 768,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "dscn0311.png",
+      alt: "Group photo at an outdoor patio",
+      width: 1024,
+      height: 768,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "img-9535.png",
+      alt: "Friends together at a lounge",
+      width: 768,
+      height: 1024,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "outdoor-lunch.png",
+      alt: "Group lunch together at an outdoor picnic table",
+      width: 768,
+      height: 1024,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "patio-selfie.png",
+      alt: "Group selfie on an outdoor patio",
+      width: 1024,
+      height: 768,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "bowlero.png",
+      alt: "Friends posing outside Bowlero",
+      width: 768,
+      height: 1024,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "img-1866.jpg",
+      alt: "Group celebrating together outdoors",
+      width: 4032,
+      height: 3024,
+    },
+    {
+      type: "image",
+      src: MEDIA_BASE + "restaurant-table.png",
+      alt: "Friends gathered around a restaurant table",
+      width: 1024,
+      height: 768,
+    },
+    {
+      type: "video",
+      src: MEDIA_BASE + "img-9481.mov",
+      alt: "Birthday celebration video",
+    },
+  ];
 
   var slideshowEl = document.getElementById("slideshow");
   var galleryEl = document.getElementById("gallery-grid");
   var lightboxEl = document.getElementById("lightbox");
-  if (!slideshowEl || !galleryEl) return;
+
+  if (!slideshowEl || !galleryEl || !items.length) {
+    return;
+  }
+
+  if (window.__GALLERY_READY__) {
+    return;
+  }
+  window.__GALLERY_READY__ = true;
+
+  slideshowEl.innerHTML = "";
+  galleryEl.innerHTML = "";
 
   var currentIndex = 0;
   var timer = null;
-  var galleryClickBound = false;
-  var lifecycleBound = false;
   var IMAGE_SLIDE_MS = 5000;
   var VIDEO_SLIDE_MS = 7000;
-  var SLIDESHOW_MAX_WIDTH = 960;
-  var SLIDESHOW_DESKTOP_BREAKPOINT = 768;
-  var SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO = 0.38;
-  var SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO = 0.55;
-  var SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO = 0.58;
+
+  function isPortrait(item) {
+    return item.height > item.width;
+  }
+
+  function slideDuration(index) {
+    return items[index] && items[index].type === "video" ? VIDEO_SLIDE_MS : IMAGE_SLIDE_MS;
+  }
 
   function getSlides() {
     return slideshowEl.querySelectorAll(".slideshow__slide");
@@ -37,141 +104,13 @@
     return slideshowEl.querySelectorAll(".slideshow__dot");
   }
 
-  function slideDuration(index) {
-    var item = items[index];
-    return item && item.type === "video" ? VIDEO_SLIDE_MS : IMAGE_SLIDE_MS;
-  }
-
-  function readElementDimensions(el) {
-    if (!el) return null;
-    if (el.tagName === "IMG" && el.naturalWidth > 0) {
-      return { width: el.naturalWidth, height: el.naturalHeight };
-    }
-    if (el.tagName === "VIDEO" && el.videoWidth > 0) {
-      return { width: el.videoWidth, height: el.videoHeight };
-    }
-    return null;
-  }
-
-  function getItemDimensions(item, el) {
-    if (item.width > 0 && item.height > 0) {
-      return { width: item.width, height: item.height };
-    }
-    var fromEl = readElementDimensions(el);
-    if (fromEl) {
-      item.width = fromEl.width;
-      item.height = fromEl.height;
-      return fromEl;
-    }
-    return null;
-  }
-
-  function isPortrait(dims) {
-    return dims.height > dims.width;
-  }
-
-  function isDesktopViewport() {
-    return window.innerWidth >= SLIDESHOW_DESKTOP_BREAKPOINT;
-  }
-
-  function getSlideshowLimits(natWidth, natHeight) {
-    var desktop = isDesktopViewport();
-    var portrait = isPortrait({ width: natWidth, height: natHeight });
-    var sidePadding = desktop ? 48 : 32;
-    var viewportW = Math.max(window.innerWidth || 0, 320);
-    var viewportH = Math.max(window.innerHeight || 0, 480);
-    var maxW = Math.max(240, Math.min(SLIDESHOW_MAX_WIDTH, viewportW - sidePadding));
-    var heightRatio = desktop
-      ? portrait
-        ? SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO
-        : SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO
-      : SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO;
-    var maxH = Math.max(180, Math.round(viewportH * heightRatio));
-
-    return {
-      maxW: maxW,
-      maxH: maxH,
-      desktop: desktop,
-      portrait: portrait,
-    };
-  }
-
-  function computeDisplaySize(natWidth, natHeight) {
-    if (!natWidth || !natHeight) {
-      return { width: 320, height: 240 };
-    }
-
-    var limits = getSlideshowLimits(natWidth, natHeight);
-    var scale;
-
-    if (limits.desktop && !limits.portrait) {
-      scale = limits.maxW / natWidth;
-      if (natHeight * scale > limits.maxH) {
-        scale = limits.maxH / natHeight;
-      }
-    } else {
-      scale = Math.min(limits.maxW / natWidth, limits.maxH / natHeight);
-    }
-
-    if (!isFinite(scale) || scale <= 0) {
-      scale = 0.3;
-    }
-
-    return {
-      width: Math.max(240, Math.round(natWidth * scale)),
-      height: Math.max(180, Math.round(natHeight * scale)),
-    };
-  }
-
   function updateSlideshowLayout(index) {
     var item = items[index];
     if (!item) return;
 
-    var slide = getSlides()[index];
-    var media = slide ? slide.querySelector(".slideshow__media") : null;
-    var dims = getItemDimensions(item, media);
-    if (!dims) {
-      dims = { width: 4, height: 3 };
-    }
-
-    var size = computeDisplaySize(dims.width, dims.height);
-    slideshowEl.style.width = size.width + "px";
-    slideshowEl.style.height = size.height + "px";
-    slideshowEl.style.maxWidth = "calc(100% - 2rem)";
-    slideshowEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
-    slideshowEl.dataset.viewport = isDesktopViewport() ? "desktop" : "mobile";
-  }
-
-  function applyGalleryAspect(button, item) {
-    var dims = getItemDimensions(item);
-    if (!dims) return;
-    button.style.aspectRatio = dims.width + " / " + dims.height;
-    button.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
-  }
-
-  function onMediaReady(item, el, index) {
-    applyGalleryAspect(
-      galleryEl.querySelector('.gallery__item[data-index="' + index + '"]'),
-      item
-    );
-    if (index === currentIndex) {
-      updateSlideshowLayout(index);
-    }
-  }
-
-  function bindMediaReady(item, el, index) {
-    if (item.type === "video") {
-      el.addEventListener("loadedmetadata", function () {
-        onMediaReady(item, el, index);
-      });
-      if (el.readyState >= 1) onMediaReady(item, el, index);
-      return;
-    }
-
-    el.addEventListener("load", function () {
-      onMediaReady(item, el, index);
-    });
-    if (el.complete) onMediaReady(item, el, index);
+    var portrait = item.width > 0 && item.height > 0 ? isPortrait(item) : false;
+    slideshowEl.classList.toggle("slideshow--portrait", portrait);
+    slideshowEl.classList.toggle("slideshow--landscape", !portrait);
   }
 
   function createMediaElement(item, className, options) {
@@ -195,23 +134,17 @@
     img.alt = item.alt || "";
     img.loading = options.loading || "lazy";
     img.decoding = "async";
-    img.addEventListener("error", function () {
-      console.error("Failed to load media:", img.src);
-    });
     return img;
   }
 
   function buildSlideshow() {
     var track = document.createElement("div");
     track.className = "slideshow__track";
-    track.id = "slideshow-track";
 
     items.forEach(function (item, index) {
       var slide = document.createElement("div");
       slide.className = "slideshow__slide" + (index === 0 ? " is-active" : "");
-      var media = createMediaElement(item, "slideshow__media", { loading: "eager" });
-      bindMediaReady(item, media, index);
-      slide.appendChild(media);
+      slide.appendChild(createMediaElement(item, "slideshow__media", { loading: "eager" }));
       track.appendChild(slide);
     });
 
@@ -229,7 +162,6 @@
 
     var dots = document.createElement("div");
     dots.className = "slideshow__dots";
-    dots.id = "slideshow-dots";
 
     items.forEach(function (_, index) {
       var dot = document.createElement("button");
@@ -258,62 +190,6 @@
     });
   }
 
-  function teardownGallery() {
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    slideshowEl.innerHTML = "";
-    galleryEl.innerHTML = "";
-    currentIndex = 0;
-  }
-
-  function bindLifecycleOnce() {
-    if (lifecycleBound) return;
-    lifecycleBound = true;
-
-    window.addEventListener("resize", function () {
-      window.requestAnimationFrame(function () {
-        if (slideshowEl.dataset.galleryReady === "1") {
-          updateSlideshowLayout(currentIndex);
-        }
-      });
-    });
-
-    window.addEventListener("load", function () {
-      if (slideshowEl.dataset.galleryReady === "1") {
-        updateSlideshowLayout(currentIndex);
-      }
-    });
-
-    window.addEventListener("pageshow", function (event) {
-      if (event.persisted && slideshowEl.dataset.galleryReady !== "1") {
-        initGallery();
-      }
-    });
-  }
-
-  function initGallery() {
-    teardownGallery();
-
-    try {
-      buildSlideshow();
-      buildGallery();
-      updateSlideshowLayout(0);
-      window.requestAnimationFrame(function () {
-        updateSlideshowLayout(currentIndex);
-      });
-      playActiveVideo();
-      scheduleNext();
-      slideshowEl.dataset.galleryReady = "1";
-    } catch (err) {
-      console.error("Gallery init failed:", err);
-      slideshowEl.dataset.galleryReady = "0";
-      slideshowEl.innerHTML =
-        '<p class="slideshow__error">Photos could not load. Please refresh the page.</p>';
-    }
-  }
-
   function pauseAllVideos() {
     slideshowEl.querySelectorAll("video").forEach(function (video) {
       video.pause();
@@ -326,9 +202,9 @@
   }
 
   function playActiveVideo() {
-    var active = getSlides()[currentIndex];
-    if (!active) return;
-    var video = active.querySelector("video");
+    var slide = getSlides()[currentIndex];
+    if (!slide) return;
+    var video = slide.querySelector("video");
     if (video) {
       video.play().catch(function () {});
     }
@@ -368,35 +244,33 @@
       button.className = "gallery__item";
       button.setAttribute("aria-label", "View " + (item.alt || "media"));
       button.dataset.index = String(index);
-      applyGalleryAspect(button, item);
+
+      if (item.width > 0 && item.height > 0) {
+        button.style.aspectRatio = item.width + " / " + item.height;
+        button.dataset.orientation = isPortrait(item) ? "portrait" : "landscape";
+      }
 
       if (item.type === "video") {
         var video = createMediaElement(item, "gallery__thumb", { preload: "metadata" });
         video.controls = false;
         video.removeAttribute("loop");
-        bindMediaReady(item, video, index);
         button.appendChild(video);
         var badge = document.createElement("span");
         badge.className = "gallery__badge";
         badge.textContent = "Video";
         button.appendChild(badge);
       } else {
-        var thumb = createMediaElement(item, "gallery__thumb", { loading: "eager" });
-        bindMediaReady(item, thumb, index);
-        button.appendChild(thumb);
+        button.appendChild(createMediaElement(item, "gallery__thumb", { loading: "eager" }));
       }
 
       galleryEl.appendChild(button);
     });
 
-    if (!galleryClickBound) {
-      galleryClickBound = true;
-      galleryEl.addEventListener("click", function (e) {
-        var btn = e.target.closest(".gallery__item");
-        if (!btn || !lightboxEl) return;
-        openLightbox(Number(btn.dataset.index));
-      });
-    }
+    galleryEl.addEventListener("click", function (e) {
+      var btn = e.target.closest(".gallery__item");
+      if (!btn || !lightboxEl) return;
+      openLightbox(Number(btn.dataset.index));
+    });
   }
 
   function openLightbox(index) {
@@ -408,17 +282,10 @@
     document.body.classList.add("lightbox-open");
 
     var content = createMediaElement(item, "lightbox__media", { loading: "eager" });
-    bindMediaReady(item, content, index);
-
     if (item.type === "video") {
       content.controls = true;
       content.muted = false;
       content.loop = false;
-    }
-
-    var dims = getItemDimensions(item, content);
-    if (dims) {
-      lightboxEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
     }
 
     var close = document.createElement("button");
@@ -445,7 +312,6 @@
     pauseAllVideos();
     lightboxEl.hidden = true;
     lightboxEl.innerHTML = "";
-    lightboxEl.removeAttribute("data-orientation");
     document.body.classList.remove("lightbox-open");
     playActiveVideo();
   }
@@ -454,6 +320,16 @@
     if (e.key === "Escape") closeLightbox();
   });
 
-  bindLifecycleOnce();
-  initGallery();
+  buildSlideshow();
+  buildGallery();
+  updateSlideshowLayout(0);
+  playActiveVideo();
+  scheduleNext();
+
+  window.addEventListener("pageshow", function (event) {
+    if (!event.persisted) return;
+    if (!galleryEl.children.length || !slideshowEl.querySelector(".slideshow__slide")) {
+      window.location.reload();
+    }
+  });
 })();
