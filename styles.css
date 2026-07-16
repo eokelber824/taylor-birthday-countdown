@@ -446,15 +446,13 @@ body.celebration-mode .emoji:nth-child(4) {
 /* Slideshow */
 .slideshow {
   position: relative;
-  width: 100%;
-  max-width: 960px;
-  min-height: 200px;
-  aspect-ratio: var(--slideshow-aspect, 4 / 3);
   margin: 0 auto;
+  min-height: 200px;
+  min-width: 240px;
+  max-width: 960px;
   background: var(--charcoal);
   overflow: hidden;
   border-radius: 0 0 12px 12px;
-  transition: width 0.45s ease, height 0.45s ease;
 }
 
 .slideshow[data-orientation="portrait"] {

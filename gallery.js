@@ -19,6 +19,37 @@
   var SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO = 0.55;
   var SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO = 0.58;
 
+  function siteBase() {
+    var path = window.location.pathname || "/";
+    if (path.indexOf("/taylor-birthday-countdown") !== -1) {
+      return "/taylor-birthday-countdown/";
+    }
+    var parts = path.split("/").filter(Boolean);
+    if (parts.length) {
+      return "/" + parts[0] + "/";
+    }
+    return "/";
+  }
+
+  function resolveMediaSrc(src) {
+    if (!src) return src;
+    if (/^https?:\/\//i.test(src)) return src;
+    if (src.charAt(0) === "/") return src;
+    return siteBase() + src.replace(/^\.\//, "");
+  }
+
+  items.forEach(function (item) {
+    item.src = resolveMediaSrc(item.src);
+  });
+
+  function getSlides() {
+    return slideshowEl.querySelectorAll(".slideshow__slide");
+  }
+
+  function getDots() {
+    return slideshowEl.querySelectorAll(".slideshow__dot");
+  }
+
   function slideDuration(index) {
     var item = items[index];
     return item && item.type === "video" ? VIDEO_SLIDE_MS : IMAGE_SLIDE_MS;
@@ -117,9 +148,9 @@
     }
 
     var size = computeDisplaySize(dims.width, dims.height);
-    slideshowEl.style.setProperty("--slideshow-aspect", dims.width + " / " + dims.height);
     slideshowEl.style.width = size.width + "px";
     slideshowEl.style.height = size.height + "px";
+    slideshowEl.style.maxWidth = "calc(100% - 2rem)";
     slideshowEl.dataset.orientation = isPortrait(dims) ? "portrait" : "landscape";
     slideshowEl.dataset.viewport = isDesktopViewport() ? "desktop" : "mobile";
   }
@@ -162,7 +193,7 @@
     if (item.type === "video") {
       var video = document.createElement("video");
       video.className = className;
-      video.src = item.src;
+      video.src = resolveMediaSrc(item.src);
       video.muted = true;
       video.playsInline = true;
       video.loop = true;
@@ -173,10 +204,13 @@
 
     var img = document.createElement("img");
     img.className = className;
-    img.src = item.src;
+    img.src = resolveMediaSrc(item.src);
     img.alt = item.alt || "";
     img.loading = options.loading || "lazy";
     img.decoding = "async";
+    img.addEventListener("error", function () {
+      console.error("Failed to load media:", img.src);
+    });
     return img;
   }
 
@@ -241,14 +275,6 @@
         updateSlideshowLayout(currentIndex);
       });
     });
-  }
-
-  function getSlides() {
-    return slideshowEl.querySelectorAll(".slideshow__slide");
-  }
-
-  function getDots() {
-    return slideshowEl.querySelectorAll(".slideshow__dot");
   }
 
   function pauseAllVideos() {
@@ -388,15 +414,19 @@
     if (e.key === "Escape") closeLightbox();
   });
 
-  buildSlideshow();
-  buildGallery();
-  updateSlideshowLayout(0);
-  window.requestAnimationFrame(function () {
-    updateSlideshowLayout(currentIndex);
-  });
-  window.addEventListener("load", function () {
-    updateSlideshowLayout(currentIndex);
-  });
-  playActiveVideo();
-  scheduleNext();
+  try {
+    buildSlideshow();
+    buildGallery();
+    updateSlideshowLayout(0);
+    window.requestAnimationFrame(function () {
+      updateSlideshowLayout(currentIndex);
+    });
+    window.addEventListener("load", function () {
+      updateSlideshowLayout(currentIndex);
+    });
+    playActiveVideo();
+    scheduleNext();
+  } catch (err) {
+    console.error("Gallery init failed:", err);
+  }
 })();
