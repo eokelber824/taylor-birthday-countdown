@@ -124,16 +124,6 @@
     slideshowEl.dataset.viewport = isDesktopViewport() ? "desktop" : "mobile";
   }
 
-  function applyIntrinsicSize(el, item) {
-    var dims = getItemDimensions(item, el);
-    if (!dims) return;
-
-    el.width = dims.width;
-    el.height = dims.height;
-    el.setAttribute("width", String(dims.width));
-    el.setAttribute("height", String(dims.height));
-  }
-
   function applyGalleryAspect(button, item) {
     var dims = getItemDimensions(item);
     if (!dims) return;
@@ -142,7 +132,6 @@
   }
 
   function onMediaReady(item, el, index) {
-    applyIntrinsicSize(el, item);
     applyGalleryAspect(
       galleryEl.querySelector('.gallery__item[data-index="' + index + '"]'),
       item
@@ -167,7 +156,9 @@
     if (el.complete) onMediaReady(item, el, index);
   }
 
-  function createMediaElement(item, className) {
+  function createMediaElement(item, className, options) {
+    options = options || {};
+
     if (item.type === "video") {
       var video = document.createElement("video");
       video.className = className;
@@ -175,7 +166,7 @@
       video.muted = true;
       video.playsInline = true;
       video.loop = true;
-      video.preload = "metadata";
+      video.preload = options.preload || "metadata";
       video.setAttribute("aria-label", item.alt || "Video");
       return video;
     }
@@ -184,13 +175,9 @@
     img.className = className;
     img.src = item.src;
     img.alt = item.alt || "";
-    img.loading = indexOfItem(item) === 0 ? "eager" : "lazy";
+    img.loading = options.loading || "lazy";
     img.decoding = "async";
     return img;
-  }
-
-  function indexOfItem(item) {
-    return items.indexOf(item);
   }
 
   function buildSlideshow() {
@@ -201,7 +188,7 @@
     items.forEach(function (item, index) {
       var slide = document.createElement("div");
       slide.className = "slideshow__slide" + (index === 0 ? " is-active" : "");
-      var media = createMediaElement(item, "slideshow__media");
+      var media = createMediaElement(item, "slideshow__media", { loading: "eager" });
       bindMediaReady(item, media, index);
       slide.appendChild(media);
       track.appendChild(slide);
@@ -321,7 +308,7 @@
       applyGalleryAspect(button, item);
 
       if (item.type === "video") {
-        var video = createMediaElement(item, "gallery__thumb");
+        var video = createMediaElement(item, "gallery__thumb", { preload: "metadata" });
         video.controls = false;
         video.removeAttribute("loop");
         bindMediaReady(item, video, index);
@@ -331,7 +318,7 @@
         badge.textContent = "Video";
         button.appendChild(badge);
       } else {
-        var thumb = createMediaElement(item, "gallery__thumb");
+        var thumb = createMediaElement(item, "gallery__thumb", { loading: "eager" });
         bindMediaReady(item, thumb, index);
         button.appendChild(thumb);
       }
@@ -354,8 +341,7 @@
     lightboxEl.hidden = false;
     document.body.classList.add("lightbox-open");
 
-    var content = createMediaElement(item, "lightbox__media");
-    applyIntrinsicSize(content, item);
+    var content = createMediaElement(item, "lightbox__media", { loading: "eager" });
     bindMediaReady(item, content, index);
 
     if (item.type === "video") {
