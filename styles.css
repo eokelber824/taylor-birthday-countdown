@@ -459,6 +459,13 @@ body.celebration-mode .emoji:nth-child(4) {
   border-radius: 12px;
 }
 
+.slideshow__error {
+  color: var(--warm-white);
+  text-align: center;
+  padding: 1.5rem 1rem;
+  margin: 0;
+}
+
 .slideshow__track {
   width: 100%;
   height: 100%;

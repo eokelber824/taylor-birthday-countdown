@@ -1,7 +1,15 @@
 (function () {
   "use strict";
 
-  var items = window.MEDIA_ITEMS || [];
+  var items = (window.MEDIA_ITEMS || []).map(function (item) {
+    return {
+      type: item.type,
+      src: item.src,
+      alt: item.alt || "",
+      width: item.width,
+      height: item.height,
+    };
+  });
   if (!items.length) return;
 
   var slideshowEl = document.getElementById("slideshow");
@@ -11,6 +19,8 @@
 
   var currentIndex = 0;
   var timer = null;
+  var galleryClickBound = false;
+  var lifecycleBound = false;
   var IMAGE_SLIDE_MS = 5000;
   var VIDEO_SLIDE_MS = 7000;
   var SLIDESHOW_MAX_WIDTH = 960;
@@ -18,29 +28,6 @@
   var SLIDESHOW_MOBILE_MAX_HEIGHT_RATIO = 0.38;
   var SLIDESHOW_DESKTOP_LANDSCAPE_MAX_HEIGHT_RATIO = 0.55;
   var SLIDESHOW_DESKTOP_PORTRAIT_MAX_HEIGHT_RATIO = 0.58;
-
-  function siteBase() {
-    var path = window.location.pathname || "/";
-    if (path.indexOf("/taylor-birthday-countdown") !== -1) {
-      return "/taylor-birthday-countdown/";
-    }
-    var parts = path.split("/").filter(Boolean);
-    if (parts.length) {
-      return "/" + parts[0] + "/";
-    }
-    return "/";
-  }
-
-  function resolveMediaSrc(src) {
-    if (!src) return src;
-    if (/^https?:\/\//i.test(src)) return src;
-    if (src.charAt(0) === "/") return src;
-    return siteBase() + src.replace(/^\.\//, "");
-  }
-
-  items.forEach(function (item) {
-    item.src = resolveMediaSrc(item.src);
-  });
 
   function getSlides() {
     return slideshowEl.querySelectorAll(".slideshow__slide");
@@ -193,7 +180,7 @@
     if (item.type === "video") {
       var video = document.createElement("video");
       video.className = className;
-      video.src = resolveMediaSrc(item.src);
+      video.src = item.src;
       video.muted = true;
       video.playsInline = true;
       video.loop = true;
@@ -204,7 +191,7 @@
 
     var img = document.createElement("img");
     img.className = className;
-    img.src = resolveMediaSrc(item.src);
+    img.src = item.src;
     img.alt = item.alt || "";
     img.loading = options.loading || "lazy";
     img.decoding = "async";
@@ -269,12 +256,62 @@
       if (!btn) return;
       goToSlide(Number(btn.dataset.index));
     });
+  }
+
+  function teardownGallery() {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    slideshowEl.innerHTML = "";
+    galleryEl.innerHTML = "";
+    currentIndex = 0;
+  }
+
+  function bindLifecycleOnce() {
+    if (lifecycleBound) return;
+    lifecycleBound = true;
 
     window.addEventListener("resize", function () {
       window.requestAnimationFrame(function () {
-        updateSlideshowLayout(currentIndex);
+        if (slideshowEl.dataset.galleryReady === "1") {
+          updateSlideshowLayout(currentIndex);
+        }
       });
     });
+
+    window.addEventListener("load", function () {
+      if (slideshowEl.dataset.galleryReady === "1") {
+        updateSlideshowLayout(currentIndex);
+      }
+    });
+
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) {
+        initGallery();
+      }
+    });
+  }
+
+  function initGallery() {
+    teardownGallery();
+
+    try {
+      buildSlideshow();
+      buildGallery();
+      updateSlideshowLayout(0);
+      window.requestAnimationFrame(function () {
+        updateSlideshowLayout(currentIndex);
+      });
+      playActiveVideo();
+      scheduleNext();
+      slideshowEl.dataset.galleryReady = "1";
+    } catch (err) {
+      console.error("Gallery init failed:", err);
+      slideshowEl.dataset.galleryReady = "0";
+      slideshowEl.innerHTML =
+        '<p class="slideshow__error">Photos could not load. Please refresh the page.</p>';
+    }
   }
 
   function pauseAllVideos() {
@@ -352,11 +389,14 @@
       galleryEl.appendChild(button);
     });
 
-    galleryEl.addEventListener("click", function (e) {
-      var btn = e.target.closest(".gallery__item");
-      if (!btn || !lightboxEl) return;
-      openLightbox(Number(btn.dataset.index));
-    });
+    if (!galleryClickBound) {
+      galleryClickBound = true;
+      galleryEl.addEventListener("click", function (e) {
+        var btn = e.target.closest(".gallery__item");
+        if (!btn || !lightboxEl) return;
+        openLightbox(Number(btn.dataset.index));
+      });
+    }
   }
 
   function openLightbox(index) {
@@ -414,19 +454,6 @@
     if (e.key === "Escape") closeLightbox();
   });
 
-  try {
-    buildSlideshow();
-    buildGallery();
-    updateSlideshowLayout(0);
-    window.requestAnimationFrame(function () {
-      updateSlideshowLayout(currentIndex);
-    });
-    window.addEventListener("load", function () {
-      updateSlideshowLayout(currentIndex);
-    });
-    playActiveVideo();
-    scheduleNext();
-  } catch (err) {
-    console.error("Gallery init failed:", err);
-  }
+  bindLifecycleOnce();
+  initGallery();
 })();
