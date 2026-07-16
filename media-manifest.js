@@ -22,10 +22,38 @@ window.MEDIA_ITEMS = [
   },
   {
     type: "image",
+    src: "media/outdoor-lunch.png",
+    alt: "Group lunch together at an outdoor picnic table",
+    width: 768,
+    height: 1024,
+  },
+  {
+    type: "image",
+    src: "media/patio-selfie.png",
+    alt: "Group selfie on an outdoor patio",
+    width: 1024,
+    height: 768,
+  },
+  {
+    type: "image",
+    src: "media/bowlero.png",
+    alt: "Friends posing outside Bowlero",
+    width: 768,
+    height: 1024,
+  },
+  {
+    type: "image",
     src: "media/img-1866.jpg",
     alt: "Group celebrating together outdoors",
     width: 4032,
     height: 3024,
+  },
+  {
+    type: "image",
+    src: "media/restaurant-table.png",
+    alt: "Friends gathered around a restaurant table",
+    width: 1024,
+    height: 768,
   },
   {
     type: "video",
