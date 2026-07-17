@@ -56,6 +56,13 @@ window.MEDIA_ITEMS = [
     height: 768,
   },
   {
+    type: "image",
+    src: "/taylor-birthday-countdown/media/virtual-gathering.png",
+    alt: "Team video call celebrating together",
+    width: 1024,
+    height: 593,
+  },
+  {
     type: "video",
     src: "/taylor-birthday-countdown/media/img-9481.mov",
     alt: "Birthday celebration video",

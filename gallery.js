@@ -61,6 +61,13 @@
       height: 768,
     },
     {
+      type: "image",
+      src: MEDIA_BASE + "virtual-gathering.png",
+      alt: "Team video call celebrating together",
+      width: 1024,
+      height: 593,
+    },
+    {
       type: "video",
       src: MEDIA_BASE + "img-9481.mov",
       alt: "Birthday celebration video",
